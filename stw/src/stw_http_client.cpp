@@ -1,6 +1,6 @@
 #include "stw_http_client.hpp"
 #include "stw_runtime.hpp"
-#include <curl/curl.h>
+//#include <curl/curl.h>
 #include <vector>
 #include <sstream>
 #include <cstring>
@@ -10,7 +10,138 @@
 
 namespace stw
 {
-	typedef size_t (*curl_setopt_callback)(void* contents, size_t size, size_t nmemb, void *userp);
+    #define CURL_GLOBAL_SSL (1<<0)
+    #define CURL_GLOBAL_WIN32 (1<<1)
+    #define CURL_GLOBAL_ALL (CURL_GLOBAL_SSL|CURL_GLOBAL_WIN32)
+    #define CURL_GLOBAL_DEFAULT CURL_GLOBAL_ALL
+
+    typedef size_t (*curl_setopt_callback)(void* contents, size_t size, size_t nmemb, void *userp);
+
+    typedef void CURL;
+
+    typedef enum {
+
+    } CURLINFO;
+
+    typedef enum {
+        CURLE_OK = 0,
+        CURLE_UNSUPPORTED_PROTOCOL,    
+        CURLE_FAILED_INIT,             
+        CURLE_URL_MALFORMAT,           
+        CURLE_NOT_BUILT_IN,            
+        CURLE_COULDNT_RESOLVE_PROXY,   
+        CURLE_COULDNT_RESOLVE_HOST,    
+        CURLE_COULDNT_CONNECT,         
+        CURLE_WEIRD_SERVER_REPLY,      
+        CURLE_REMOTE_ACCESS_DENIED,    
+        CURLE_FTP_ACCEPT_FAILED,       
+        CURLE_FTP_WEIRD_PASS_REPLY,    
+        CURLE_FTP_ACCEPT_TIMEOUT,      
+        CURLE_FTP_WEIRD_PASV_REPLY,    
+        CURLE_FTP_WEIRD_227_FORMAT,    
+        CURLE_FTP_CANT_GET_HOST,       
+        CURLE_HTTP2,                   
+        CURLE_FTP_COULDNT_SET_TYPE,    
+        CURLE_PARTIAL_FILE,            
+        CURLE_FTP_COULDNT_RETR_FILE,   
+        CURLE_OBSOLETE20,              
+        CURLE_QUOTE_ERROR,             
+        CURLE_HTTP_RETURNED_ERROR,     
+        CURLE_WRITE_ERROR,             
+        CURLE_OBSOLETE24,              
+        CURLE_UPLOAD_FAILED,           
+        CURLE_READ_ERROR,              
+        CURLE_OUT_OF_MEMORY,           
+        CURLE_OPERATION_TIMEDOUT,      
+        CURLE_OBSOLETE29,              
+        CURLE_FTP_PORT_FAILED,         
+        CURLE_FTP_COULDNT_USE_REST,    
+        CURLE_OBSOLETE32,              
+        CURLE_RANGE_ERROR,             
+        CURLE_HTTP_POST_ERROR,         
+        CURLE_SSL_CONNECT_ERROR,       
+        CURLE_BAD_DOWNLOAD_RESUME,     
+        CURLE_FILE_COULDNT_READ_FILE,  
+        CURLE_LDAP_CANNOT_BIND,        
+        CURLE_LDAP_SEARCH_FAILED,      
+        CURLE_OBSOLETE40,              
+        CURLE_FUNCTION_NOT_FOUND,      
+        CURLE_ABORTED_BY_CALLBACK,     
+        CURLE_BAD_FUNCTION_ARGUMENT,   
+        CURLE_OBSOLETE44,              
+        CURLE_INTERFACE_FAILED,        
+        CURLE_OBSOLETE46,              
+        CURLE_TOO_MANY_REDIRECTS,      
+        CURLE_UNKNOWN_OPTION,          
+        CURLE_TELNET_OPTION_SYNTAX,    
+        CURLE_OBSOLETE50,              
+        CURLE_OBSOLETE51,              
+        CURLE_GOT_NOTHING,             
+        CURLE_SSL_ENGINE_NOTFOUND,     
+        CURLE_SSL_ENGINE_SETFAILED,    
+        CURLE_SEND_ERROR,              
+        CURLE_RECV_ERROR,              
+        CURLE_OBSOLETE57,              
+        CURLE_SSL_CERTPROBLEM,         
+        CURLE_SSL_CIPHER,              
+        CURLE_PEER_FAILED_VERIFICATION, 
+        CURLE_BAD_CONTENT_ENCODING,    
+        CURLE_LDAP_INVALID_URL,        
+        CURLE_FILESIZE_EXCEEDED,       
+        CURLE_USE_SSL_FAILED,          
+        CURLE_SEND_FAIL_REWIND,        
+        CURLE_SSL_ENGINE_INITFAILED,   
+        CURLE_LOGIN_DENIED,            
+        CURLE_TFTP_NOTFOUND,           
+        CURLE_TFTP_PERM,               
+        CURLE_REMOTE_DISK_FULL,        
+        CURLE_TFTP_ILLEGAL,            
+        CURLE_TFTP_UNKNOWNID,          
+        CURLE_REMOTE_FILE_EXISTS,      
+        CURLE_TFTP_NOSUCHUSER,         
+        CURLE_CONV_FAILED,             
+        CURLE_CONV_REQD,               
+        CURLE_SSL_CACERT_BADFILE,      
+        CURLE_REMOTE_FILE_NOT_FOUND,   
+        CURLE_SSH,                     
+        CURLE_SSL_SHUTDOWN_FAILED,     
+        CURLE_AGAIN,                   
+        CURLE_SSL_CRL_BADFILE,         
+        CURLE_SSL_ISSUER_ERROR,        
+        CURLE_FTP_PRET_FAILED,         
+        CURLE_RTSP_CSEQ_ERROR,         
+        CURLE_RTSP_SESSION_ERROR,      
+        CURLE_FTP_BAD_FILE_LIST,       
+        CURLE_CHUNK_FAILED,            
+        CURLE_NO_CONNECTION_AVAILABLE, 
+        CURLE_SSL_PINNEDPUBKEYNOTMATCH, 
+        CURLE_SSL_INVALIDCERTSTATUS,   
+        CURLE_HTTP2_STREAM,            
+        CURLE_RECURSIVE_API_CALL,      
+        CURLE_AUTH_ERROR,              
+        CURLE_HTTP3,                   
+        CURLE_QUIC_CONNECT_ERROR,      
+        CURLE_PROXY,                   
+        CURL_LAST 
+    } CURLcode;
+    
+    struct curl_slist {
+        char *data;
+        struct curl_slist *next;
+    };
+
+    typedef enum {
+        CURLOPT_URL = 10002,
+        CURLOPT_WRITEFUNCTION = 20011,
+        CURLOPT_WRITEDATA = 10001,
+        CURLOPT_HEADERFUNCTION = 20079,
+        CURLOPT_HEADERDATA = 10029,
+        CURLOPT_SSL_VERIFYPEER = 64,
+        CURLOPT_SSL_VERIFYHOST = 81,
+        CURLOPT_HTTPHEADER = 10023,
+        CURLOPT_POSTFIELDS = 10015,
+        CURLOPT_POSTFIELDSIZE = 60,
+    } CURLoption;
 
 	namespace curl
 	{
