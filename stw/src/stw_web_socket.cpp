@@ -1,4 +1,5 @@
 #include "stw_web_socket.hpp"
+#include "stw_string.hpp"
 #include <cstring>
 #include <sstream>
 #include <algorithm>
@@ -53,136 +54,6 @@ namespace stw
         std::memcpy(dest, src, size);
     }
 
-    static bool is_valid_utf8(const void *payload, size_t size) 
-	{
-        int numBytes = 0; // Number of bytes expected in the current UTF-8 character
-        unsigned char byte;
-        const uint8_t *pPayload = reinterpret_cast<const uint8_t*>(payload);
-
-        for (size_t i = 0; i < size; ++i) 
-		{
-            byte = pPayload[i];
-
-            if (numBytes == 0) 
-			{
-                // Determine the number of bytes in the UTF-8 character
-                if ((byte & 0x80) == 0) 
-				{
-                    // 1-byte character (ASCII)
-                    continue;
-                } 
-				else if ((byte & 0xE0) == 0xC0) 
-				{
-                    // 2-byte character
-                    numBytes = 1;
-                } 
-				else if ((byte & 0xF0) == 0xE0) 
-				{
-                    // 3-byte character
-                    numBytes = 2;
-                } 
-				else if ((byte & 0xF8) == 0xF0) 
-				{
-                    // 4-byte character
-                    numBytes = 3;
-                } 
-				else 
-				{
-                    // Invalid first byte
-                    return false;
-                }
-            } 
-			else 
-			{
-                // Check continuation bytes
-                if ((byte & 0xC0) != 0x80) 
-				{
-                    return false; // Invalid continuation byte
-                }
-                numBytes--;
-            }
-        }
-
-        return numBytes == 0; // Ensure all characters were complete
-    }
-
-    static bool string_contains(const std::string &haystack, const std::string &needle) 
-	{
-        return haystack.find(needle) != std::string::npos;
-    }
-
-    static bool string_ends_with(const std::string &haystack, const std::string &needle) 
-	{
-        if (haystack.length() >= needle.length()) 
-            return (0 == haystack.compare(haystack.length() - needle.length(), needle.length(), needle));
-        return false;
-    }
-
-    static std::string string_trim_start(const std::string& str) 
-    {
-        size_t start = 0;
-
-        // Find the first non-whitespace character
-        while (start < str.length() && std::isspace(static_cast<unsigned char>(str[start]))) 
-        {
-            ++start;
-        }
-
-        // Return the substring from the first non-whitespace character to the end
-        return str.substr(start);
-    }
-
-	static std::vector<std::string> string_split(const std::string& str, char separator, size_t maxParts = 0) 
-    {
-        std::vector<std::string> result;
-        size_t start = 0;
-        size_t end = 0;
-
-        while ((end = str.find(separator, start)) != std::string::npos) 
-        {
-            result.push_back(str.substr(start, end - start));
-            start = end + 1;
-
-            if (maxParts > 0 && result.size() >= maxParts - 1) 
-                break; // Stop if we have reached maximum parts
-        }
-        result.push_back(str.substr(start)); // Add the last part
-        return result;
-    }
-
-	static bool try_parse_uint16(const std::string &value, uint16_t &v)
-	{
-        std::stringstream ss(value);
-        ss >> v;
-
-        if (ss.fail() || !ss.eof())
-            return false;
-        
-        return true;
-	}
-
-    static bool try_parse_int32(const std::string &value, int32_t &v)
-    {
-        std::stringstream ss(value);
-        ss >> v;
-
-        if (ss.fail() || !ss.eof())
-            return false;
-        
-        return true;
-    }
-
-    static bool try_parse_uint64(const std::string &value, uint64_t &v)
-    {
-        std::stringstream ss(value);
-        ss >> v;
-
-        if (ss.fail() || !ss.eof())
-            return false;
-        
-        return true;
-    }
-
 	static bool uri_get_scheme(const std::string &uri, std::string &value) 
 	{
         std::regex schemeRegex(R"(([^:/?#]+):\/\/)");
@@ -232,7 +103,7 @@ namespace stw
             byte = static_cast<unsigned char>(distribution(generator));
         }
 
-        return base64_encode(randomBytes, 16);
+        return crypto::base64_encode(randomBytes, 16);
     }
 
     static std::string generate_accept_key(const std::string &websocketKey) 
@@ -242,9 +113,9 @@ namespace stw
 
 		constexpr size_t SHA_DIGEST_LENGTH = 20;
         uint8_t hash[SHA_DIGEST_LENGTH];
-        create_sha1_hash(reinterpret_cast<const uint8_t*>(acceptKey.c_str()), acceptKey.size(), hash);
+        crypto::create_sha1_hash(reinterpret_cast<const uint8_t*>(acceptKey.c_str()), acceptKey.size(), hash);
 
-        return base64_encode(hash, SHA_DIGEST_LENGTH);
+        return crypto::base64_encode(hash, SHA_DIGEST_LENGTH);
     }
 
     static ip_version detect_ip_version(const std::string &ip) 
@@ -284,9 +155,9 @@ namespace stw
             return false;
         }        
 
-        if(string_contains(host, ":")) 
+        if(string::contains(host, ":")) 
 		{
-            auto parts = string_split(host, ':');
+            auto parts = string::split(host, ':');
 
             if(parts.size() != 2)
                 return false;
@@ -294,7 +165,7 @@ namespace stw
             //Get rid of the :port part in the host
             host = parts[0];
 
-            if(!try_parse_uint16(parts[1], port))
+            if(!string::try_parse_uint16(parts[1], port))
                 return false;
             
         } 
@@ -381,7 +252,7 @@ namespace stw
 		
 		std::string URL = url;
 
-        if(!string_ends_with(URL, "/"))
+        if(!string::ends_with(URL, "/"))
             URL += "/";
 
         std::string scheme, hostName, path;
@@ -610,13 +481,14 @@ namespace stw
         std::string version = requestHeaders["sec-websocket-version"];
         std::string webKey = requestHeaders["sec-websocket-key"];
 
-        if(upgrade != "websocket") {
+        if(upgrade != "websocket") 
+        {
             write_error("web_socket::accept: failed to find 'websocket'");
             sendBadRequest(client);
             return false;
         }
 
-        if(!string_contains(connection, "Upgrade")) 
+        if(!string::contains(connection, "Upgrade")) 
         {
             write_error("web_socket::accept: failed to find 'Upgrade'");
             sendBadRequest(client);
@@ -835,7 +707,7 @@ namespace stw
                     //According to RFC 6455 we need to verify if text opcodes contain valid UTF-8
                     if(message.opcode == web_socket_opcode_text) 
 					{
-                        if(!is_valid_utf8(&message.payload[0], message.payload.size())) 
+                        if(!string::is_valid_utf8(&message.payload[0], message.payload.size())) 
                             return drop_connection(web_socket_result_utf8_error);
                     }
 
@@ -1183,13 +1055,6 @@ namespace stw
         std::string line;
         size_t count = 0;
 
-        auto to_lower = [] (const std::string &str) -> std::string {
-            std::string lower_str = str;
-            std::transform(lower_str.begin(), lower_str.end(), lower_str.begin(),
-                        [](unsigned char c) { return std::tolower(c); });
-            return lower_str;
-        };
-
         while(std::getline(responseStream, line))
         {
             line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
@@ -1202,22 +1067,22 @@ namespace stw
                 if(line[line.size() - 1] == ' ')
                     line.pop_back();
 
-                auto parts = string_split(line, ' ', 0);
+                auto parts = string::split(line, ' ', 0);
                 
                 if(parts.size() < 2)
                     return false;
 
-                if(!try_parse_int32(parts[1], statusCode))
+                if(!string::try_parse_int32(parts[1], statusCode))
                     return false;
             }
             else
             {
-                auto parts = string_split(line, ':', 2);
+                auto parts = string::split(line, ':', 2);
 
                 if(parts.size() == 2)
                 {
-                    parts[0] = to_lower(parts[0]);
-                    parts[1] = string_trim_start(parts[1]);
+                    parts[0] = string::to_lower(parts[0]);
+                    parts[1] = string::trim_start(parts[1]);
                     header[parts[0]] = parts[1];
                 }
             }
@@ -1227,7 +1092,7 @@ namespace stw
 
         if(header.contains("content-length"))
         {
-            if(!try_parse_uint64(header["content-length"], contentLength))
+            if(!string::try_parse_uint64(header["content-length"], contentLength))
                 contentLength = 0;
         }
 
@@ -1240,13 +1105,6 @@ namespace stw
         std::string line;
         size_t count = 0;
 
-        auto to_lower = [] (const std::string &str) -> std::string {
-            std::string lower_str = str;
-            std::transform(lower_str.begin(), lower_str.end(), lower_str.begin(),
-                        [](unsigned char c) { return std::tolower(c); });
-            return lower_str;
-        };
-
         while(std::getline(responseStream, line))
         {
             line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
@@ -1259,22 +1117,22 @@ namespace stw
                 if(line[line.size() - 1] == ' ')
                     line.pop_back();
 
-                auto parts = string_split(line, ' ', 0);
+                auto parts = string::split(line, ' ', 0);
                 
                 if(parts.size() < 2)
                     return false;
 
-                method = to_lower(parts[0]);
+                method = string::to_lower(parts[0]);
                 path = parts[1];
             }
             else
             {
-                auto parts = string_split(line, ':', 2);
+                auto parts = string::split(line, ':', 2);
 
                 if(parts.size() == 2)
                 {
-                    parts[0] = to_lower(parts[0]);
-                    parts[1] = string_trim_start(parts[1]);
+                    parts[0] = string::to_lower(parts[0]);
+                    parts[1] = string::trim_start(parts[1]);
                     header[parts[0]] = parts[1];
                 }
             }
@@ -1284,7 +1142,7 @@ namespace stw
 
         if(header.contains("content-length"))
         {
-            if(!try_parse_uint64(header["content-length"], contentLength))
+            if(!string::try_parse_uint64(header["content-length"], contentLength))
                 contentLength = 0;
         }
 

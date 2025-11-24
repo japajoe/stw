@@ -96,7 +96,8 @@ namespace stw
 	socket::socket(socket_protocol_type protocolType)
 	{
         this->protocolType = protocolType;
-		std::memset(&s, 0, sizeof(socket));
+
+		std::memset(&s, 0, sizeof(socket_t));
 		s.fd = -1;
         s.addressFamily = address_family_af_inet;
 
@@ -226,18 +227,18 @@ namespace stw
 		return true;
 	}
 
-	bool socket::bind(const std::string &bindAddress, uint16_t port)
-	{
+    bool socket::bind(const std::string &bindAddress, uint16_t port)
+    {
         if(s.fd < 0) 
         {
             int32_t newfd = ::socket(static_cast<int>(s.addressFamily), protocolType == socket_protocol_type_tcp ? SOCK_STREAM : SOCK_DGRAM, 0);
+
             if(newfd < 0) 
             {
                 std::cerr << "Socket::bind: " << strerror(errno) << std::endl;
                 return false;
             }
             s.fd = newfd;
-
         }
 
         if(s.addressFamily == address_family_af_inet) 
@@ -267,7 +268,7 @@ namespace stw
             if (inet_pton(AF_INET6, bindAddress.c_str(), &address.sin6_addr) <= 0) 
                 return false;
 
-            std::memcpy(&s.address.ipv4, &address, sizeof(sockaddr_in6));
+            std::memcpy(&s.address.ipv6, &address, sizeof(sockaddr_in6));
 
             int reuse = 1;
             set_option(SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
@@ -276,7 +277,7 @@ namespace stw
         }
 
         return false;
-	}
+    }
 
 	bool socket::listen(int32_t backlog)
 	{

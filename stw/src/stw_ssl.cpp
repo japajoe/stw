@@ -2,6 +2,7 @@
 #include "stw_runtime.hpp"
 #include <stdexcept>
 #include <utility>
+#include <cstring>
 
 namespace stw
 {
@@ -743,7 +744,7 @@ namespace stw
 		return pSsl != nullptr;
 	}
 
-	std::string base64_encode(const uint8_t* buffer, size_t size)
+	std::string crypto::base64_encode(const uint8_t* buffer, size_t size)
 	{
 		if(!openssl::is_loaded())
 			return "";
@@ -765,7 +766,7 @@ namespace stw
         return std::string(bufferPtr->data, bufferPtr->length);
 	}
 
-	uint8_t *create_sha1_hash(const uint8_t *d, size_t n, uint8_t *md)
+	uint8_t *crypto::create_sha1_hash(const uint8_t *d, size_t n, uint8_t *md)
 	{
 		if(!openssl::is_loaded())
 			return nullptr;
