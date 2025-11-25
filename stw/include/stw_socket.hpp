@@ -83,6 +83,7 @@ namespace stw
 		bool read_all(void *buffer, size_t size);
 		bool write_all(const void *buffer, size_t size);
 		bool set_option(int32_t level, int32_t option, const void *value, uint32_t valueSize);
+		bool set_timeout(uint32_t seconds);
 		bool set_blocking(bool block);
 		int32_t get_file_descriptor() const;
 		static bool resolve(const std::string &uri, std::string &ip, uint16_t &port, std::string &hostname, bool forceIPv4);

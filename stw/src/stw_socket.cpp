@@ -519,6 +519,19 @@ namespace stw
     #endif
 	}
 
+    bool socket::set_timeout(uint32_t seconds)
+    {
+    #ifdef _WIN32
+        DWORD timeout = seconds * 1000; // Convert to milliseconds
+        return setsockopt(s.fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) != 0 ? false : true;
+    #else
+        struct timeval timeout;
+        timeout.tv_sec = seconds;
+        timeout.tv_usec = 0;
+        return setsockopt(s.fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) != 0 ? false : true;
+    #endif
+    }
+
     bool socket::set_blocking(bool block)
     {
     #ifdef _WIN32

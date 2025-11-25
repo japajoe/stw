@@ -73,7 +73,7 @@ namespace stw
 		if(!listener.listen(10))
 			return;
 			
-		listener.set_blocking(false);
+		listener.set_timeout(1);
 		
 		std::cout << "Server listening on: http://" << config.bindAddress << ':' << config.port << '\n';
 
@@ -88,8 +88,6 @@ namespace stw
 				auto result = std::async(std::launch::async, &http_server::on_request, this, std::move(connection));
 				(void)result;
 			}
-
-			std::this_thread::sleep_for(std::chrono::milliseconds(2));
 		}
 
 		listener.close();
@@ -105,7 +103,7 @@ namespace stw
 		if(!listener.listen(10))
 			return;
 			
-		listener.set_blocking(false);
+		listener.set_timeout(1);
 		
 		std::cout << "Server listening on: https://" << config.bindAddress << ':' << config.portHttps << '\n';
 
@@ -139,8 +137,6 @@ namespace stw
 				auto result = std::async(std::launch::async, &http_server::on_request, this, std::move(connection));
 				(void)result;
 			}
-
-			std::this_thread::sleep_for(std::chrono::milliseconds(2));
 		}
 
 		listener.close();
