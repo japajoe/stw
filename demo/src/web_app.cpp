@@ -30,7 +30,7 @@ void web_app::on_signal(int n)
 
 void web_app::on_request(stw::http_connection *connection, const stw::http_request_info &request)
 {
-	std::cout << "[" << stw::http_method_to_string(request.method) << "]: " << request.path << "\n";
+	//std::cout << "[" << stw::http_method_to_string(request.method) << "]: " << request.path << "\n";
 
 	std::string path = config.publicHtmlPath + request.path;
 	

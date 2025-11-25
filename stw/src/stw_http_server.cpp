@@ -49,80 +49,103 @@ namespace stw
 				return;
 			listeners.emplace_back();
 		}
-		
-		if(!listeners[0].bind(config.bindAddress, config.port))
-			return;
+
+		auto task1 = std::async(std::launch::async, &http_server::accept_http, this);
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
 		if(config.useHttps)
-		{
-			if(!listeners[1].bind(config.bindAddress, config.portHttps))
-				return;
-		}
-
-		for(auto &listener : listeners)
-		{
-			if(!listener.listen(10))
-				return;
-			
-			listener.set_blocking(false);
-		}
-		
-		std::cout << "Server listening on: http://" << config.bindAddress << ':' << config.port << '\n';
-
-		if(config.useHttps)
-			std::cout << "Server listening on: https://" << config.bindAddress << ':' << config.portHttps << '\n';
-
-		while(!quit.load())
-		{
-			const auto secureSocket = listeners.size() == 2 ? &listeners[1] : nullptr;
-
-			for(auto &listener : listeners)
-			{
-				socket client;
-				
-				if(listener.accept(&client))
-				{
-					ssl s;
-
-					if(&listener == secureSocket)
-					{
-						if(!s.create(&sslContext))
-						{
-							client.close();
-							continue;
-						}
-
-						if(!s.set_file_descriptor(client.get_file_descriptor()))
-						{
-							client.close();
-							continue;
-						}
-
-						if(!s.accept())
-						{
-							client.close();
-							continue;
-						}
-					}
-
-					http_connection connection(client, s);
-					auto result = std::async(std::launch::async, &http_server::on_request, this, std::move(connection));
-					(void)result;
-				}
-			}
-
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		}
-
-		for(auto &listener : listeners)
-			listener.close();
-		
-		sslContext.destroy();
+			auto task2 = std::async(std::launch::async, &http_server::accept_https, this);
 	}
 
 	void http_server::stop()
 	{
 		quit.store(true);
+	}
+
+	void http_server::accept_http()
+	{
+		auto &listener = listeners[0];
+
+		if(!listener.bind(config.bindAddress, config.port))
+			return;
+
+		if(!listener.listen(10))
+			return;
+			
+		listener.set_blocking(false);
+		
+		std::cout << "Server listening on: http://" << config.bindAddress << ':' << config.port << '\n';
+
+		while(!quit.load())
+		{
+			socket client;
+			
+			if(listener.accept(&client))
+			{
+				ssl s;
+				http_connection connection(client, s);
+				auto result = std::async(std::launch::async, &http_server::on_request, this, std::move(connection));
+				(void)result;
+			}
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(2));
+		}
+
+		listener.close();
+	}
+
+	void http_server::accept_https()
+	{
+		auto &listener = listeners[1];
+
+		if(!listener.bind(config.bindAddress, config.portHttps))
+			return;
+		
+		if(!listener.listen(10))
+			return;
+			
+		listener.set_blocking(false);
+		
+		std::cout << "Server listening on: https://" << config.bindAddress << ':' << config.portHttps << '\n';
+
+		while(!quit.load())
+		{
+			socket client;
+			
+			if(listener.accept(&client))
+			{
+				ssl s;
+
+				if(!s.create(&sslContext))
+				{
+					client.close();
+					continue;
+				}
+
+				if(!s.set_file_descriptor(client.get_file_descriptor()))
+				{
+					client.close();
+					continue;
+				}
+
+				if(!s.accept())
+				{
+					client.close();
+					continue;
+				}
+
+				http_connection connection(client, s);
+				auto result = std::async(std::launch::async, &http_server::on_request, this, std::move(connection));
+				(void)result;
+			}
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(2));
+		}
+
+		listener.close();
+
+		sslContext.destroy();
 	}
 
 	void http_server::on_request(http_connection connection)

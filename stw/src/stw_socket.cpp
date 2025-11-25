@@ -292,7 +292,7 @@ namespace stw
 
             if(newfd < 0) 
             {
-                std::cerr << "Socket::bind: " << strerror(errno) << std::endl;
+                std::cerr << "socket::bind: " << strerror(errno) << std::endl;
                 return false;
             }
             s.fd = newfd;
