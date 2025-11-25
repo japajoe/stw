@@ -64,7 +64,9 @@ namespace stw
 	class socket
 	{
 	public:
-		socket(socket_protocol_type protocolType = socket_protocol_type_tcp);
+		socket();
+		socket(socket_protocol_type protocolType);
+		socket(socket_protocol_type protocolType, const std::string &ip, uint16_t port);
 		socket(const socket &other);
 		socket(socket &&other) noexcept;
 		socket &operator=(const socket &other);

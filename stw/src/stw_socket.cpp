@@ -78,6 +78,20 @@ namespace stw
         return true;
 	}
 
+    static ip_version detect_ip_version(const std::string &ip)
+    {
+        struct sockaddr_in sa;
+        struct sockaddr_in6 sa6;
+
+        if (inet_pton(AF_INET, ip.c_str(), &(sa.sin_addr)) == 1) 
+            return ip_version_ip_v4;
+
+        if (inet_pton(AF_INET6, ip.c_str(), &(sa6.sin6_addr)) == 1)
+            return ip_version_ip_v6;
+
+        return ip_version_invalid;
+    };
+
 	class socket_exception : public std::exception 
 	{
 	public:
@@ -93,6 +107,45 @@ namespace stw
 
 	static std::atomic<int32_t> gSocketCount = 0;
 
+    static void load_winsock()
+    {
+    #ifdef _WIN32
+		if(gSocketCount.load() == 0)
+		{
+            WSADATA wsaData;
+            if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) 
+            {
+                throw socket_exception("Failed to initialize winsock");
+            }
+		}
+    #endif
+
+		gSocketCount.store(gSocketCount.load() + 1);        
+    }
+
+    static void unload_winsock()
+    {
+    #ifdef _WIN32
+		if(gSocketCount.load() == 1)
+		{
+			WSACleanup();
+		}
+    #endif
+
+		gSocketCount.store(gSocketCount.load() - 1);
+    }
+
+    socket::socket()
+    {
+        this->protocolType = socket_protocol_type_tcp;
+
+		std::memset(&s, 0, sizeof(socket_t));
+		s.fd = -1;
+        s.addressFamily = address_family_af_inet;
+
+		load_winsock();
+    }
+
 	socket::socket(socket_protocol_type protocolType)
 	{
         this->protocolType = protocolType;
@@ -101,22 +154,46 @@ namespace stw
 		s.fd = -1;
         s.addressFamily = address_family_af_inet;
 
-		if(gSocketCount.load() == 0)
-		{
-		#ifdef _WIN32
-			if(gSocketCount.load() == 0)
-			{
-				WSADATA wsaData;
-				if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) 
-				{
-					throw socket_exception("Failed to initialize winsock");
-				}
-			}
-		#endif
-		}
-
-		gSocketCount.store(gSocketCount.load() + 1);
+		load_winsock();
 	}
+
+    socket::socket(socket_protocol_type protocolType, const std::string &ip, uint16_t port)
+    {
+        this->protocolType = protocolType;
+
+		std::memset(&s, 0, sizeof(socket_t));
+		s.fd = -1;
+        s.addressFamily = address_family_af_inet;
+
+        load_winsock();
+
+		ip_version ipVersion = detect_ip_version(ip);
+
+        if(ipVersion == ip_version_invalid) 
+            throw socket_exception("Failed to detect IP version");
+        
+        s.addressFamily = (ipVersion == ip_version_ip_v4) ? address_family_af_inet : address_family_af_inet6;
+
+        s.fd = ::socket(static_cast<int>(s.addressFamily), protocolType == socket_protocol_type_tcp ? SOCK_STREAM : SOCK_DGRAM, 0);
+
+        if(s.fd < 0) 
+            throw socket_exception("Failed to create socket");
+
+        if(ipVersion == ip_version_ip_v4) 
+		{
+			std::memset(&s.address.ipv4, 0, sizeof(s.address.ipv4));
+            s.address.ipv4.sin_family = AF_INET;
+            s.address.ipv4.sin_port = htons(port);
+            inet_pton(AF_INET, ip.c_str(), &s.address.ipv4.sin_addr);
+        } 
+		else 
+		{
+			std::memset(&s.address.ipv6, 0, sizeof(s.address.ipv6));
+            s.address.ipv6.sin6_family = AF_INET6;
+            s.address.ipv6.sin6_port = htons(port);
+            inet_pton(AF_INET6, ip.c_str(), &s.address.ipv6.sin6_addr);
+        }
+    }
 
 	socket::socket(const socket &other)
 	{
@@ -156,33 +233,13 @@ namespace stw
 	{
 		close();
 
-		if(gSocketCount.load() == 1)
-		{
-		#ifdef _WIN32
-			WSACleanup();
-		#endif
-		}
-
-		gSocketCount.store(gSocketCount.load() - 1);
+        unload_winsock();
 	}
 
 	bool socket::connect(const std::string &ip, uint16_t port)
 	{
 		if(s.fd >= 0)
 			return false;
-
-		auto detect_ip_version = [] (const std::string &ip) -> ip_version {
-			struct sockaddr_in sa;
-			struct sockaddr_in6 sa6;
-
-			if (inet_pton(AF_INET, ip.c_str(), &(sa.sin_addr)) == 1) 
-				return ip_version_ip_v4;
-
-			if (inet_pton(AF_INET6, ip.c_str(), &(sa6.sin6_addr)) == 1)
-				return ip_version_ip_v6;
-
-			return ip_version_invalid;
-		};
 
 		ip_version ipVersion = detect_ip_version(ip);
 
@@ -339,8 +396,6 @@ namespace stw
         } 
         else if(size == sizeof(sockaddr_in6_t)) 
         {
-			const int sss = sizeof(target->s.address.ipv6);
-			const int ssss = sizeof(addr);
             std::memcpy(&target->s.address.ipv6, &addr, size);
             target->s.addressFamily = address_family_af_inet6;
         } 

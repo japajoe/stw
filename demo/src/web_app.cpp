@@ -32,19 +32,16 @@ void web_app::on_request(stw::http_connection *connection, const stw::http_reque
 {
 	std::cout << "[" << stw::http_method_to_string(request.method) << "]: " << request.path << "\n";
 
-	if(request.path.size() > 1)
+	std::string path = config.publicHtmlPath + request.path;
+	
+	if(stw::file::exists(path))
 	{
-		std::string path = config.publicHtmlPath + request.path;
-		
-		if(stw::file::exists(path))
+		if(stw::file::is_within_directory(path, config.publicHtmlPath))
 		{
-			if(stw::file::is_within_directory(path, config.publicHtmlPath))
-			{
-				stw::file_stream fileStream(path, stw::file_access_read);
-				std::string contentType = stw::get_http_content_type(path);
-				connection->write_response(200, nullptr, &fileStream, contentType);
-				return;
-			}
+			stw::file_stream fileStream(path, stw::file_access_read);
+			std::string contentType = stw::get_http_content_type(path);
+			connection->write_response(200, nullptr, &fileStream, contentType);
+			return;
 		}
 	}
 
