@@ -69,7 +69,9 @@ namespace stw::file
 
 	size_t get_size(const std::string &filePath)
 	{
-		return fs::file_size(filePath);
+        if(!exists(filePath))
+            return 0;
+		return fs::file_size(fs::path(filePath));
 	}
 
     bool is_within_directory(const std::string &filePath, const std::string &directoryPath)

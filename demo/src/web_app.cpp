@@ -66,19 +66,33 @@ void web_app::on_request(stw::http_connection *connection, const stw::http_reque
 
 void web_app::send_file_content(stw::http_connection *connection, const stw::http_request_info &request, const std::string &filePath)
 {
-	uint8_t *fileData = nullptr;
-	uint64_t fileSize = 0;
+	constexpr size_t MAX_FILE_SIZE = 1024 * 1024;
+	size_t fileSize = stw::file::get_size(filePath);
 
-	// Note: the file cache isn't really suitable for big files as they can fill up memory quickly.
-	// An eviction policy or file size limit could help here.
-	if(fileCache.read_file(filePath, &fileData, &fileSize))
+	// Only files less than or equal to MAX_FILE_SIZE get cached
+	if(fileSize <= MAX_FILE_SIZE)
 	{
-		stw::memory_stream stream(fileData, fileSize);
-		std::string contentType = stw::get_http_content_type(filePath);
-		connection->write_response(stw::http_status_code_ok, nullptr, &stream, contentType);
+		uint8_t *fileData = nullptr;
+		uint64_t fileSize = 0;
+
+		if(fileCache.read_file(filePath, &fileData, &fileSize))
+		{
+			stw::memory_stream stream(fileData, fileSize);
+			std::string contentType = stw::get_http_content_type(filePath);
+			connection->write_response(stw::http_status_code_ok, nullptr, &stream, contentType);
+			return;
+		}
 	}
 	else
 	{
-		connection->write_response(stw::http_status_code_not_found);
+		if(fileSize > 0)
+		{
+			stw::file_stream stream(filePath, stw::file_access_read);
+			std::string contentType = stw::get_http_content_type(filePath);
+			connection->write_response(stw::http_status_code_ok, nullptr, &stream, contentType);
+			return;
+		}
 	}
+
+	connection->write_response(stw::http_status_code_not_found);
 }
