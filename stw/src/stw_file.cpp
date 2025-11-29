@@ -1,4 +1,5 @@
 #include "stw_file.hpp"
+#include "stw_date_time.hpp"
 #include <filesystem>
 #include <fstream>
 #include <algorithm>
@@ -73,6 +74,9 @@ namespace stw::file
 
     bool is_within_directory(const std::string &filePath, const std::string &directoryPath)
     {
+        if(!exists(filePath))
+            return false;
+
         fs::path directoryPath_ = fs::absolute(directoryPath);
         fs::path filePath_ = fs::absolute(filePath);
 
@@ -140,5 +144,57 @@ namespace stw::file
         }
 
         return "";
+    }
+}
+
+namespace stw
+{
+    bool file_cache::read_file(const std::string &filePath, uint8_t **pData, uint64_t *size)
+    {
+        if(!stw::file::exists(filePath))
+            return false;
+        
+        auto getLastModifiedTime = [&] () -> uint64_t {
+            std::filesystem::path p(filePath);
+            auto lastWriteTime = std::filesystem::last_write_time(p);
+            auto sctp = decltype(lastWriteTime)::clock::to_sys(lastWriteTime);
+            auto duration = sctp.time_since_epoch();
+            uint64_t lastModified = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+            return lastModified;
+        };
+
+        uint64_t lastModified = getLastModifiedTime();
+
+        if(!files.contains(filePath))
+        {
+            files[filePath] = {
+                .data = stw::file::read_all_bytes(filePath),
+                .lastModified = lastModified
+            };
+
+            auto &file = files[filePath];
+            *pData = file.data.data();
+            *size = file.data.size();
+            return true;
+        }
+        else
+        {
+            auto &file = files[filePath];
+            
+            if(file.lastModified != lastModified)
+            {
+                file.data = stw::file::read_all_bytes(filePath);
+                file.lastModified = lastModified;
+            }
+
+            *pData = file.data.data();
+            *size = file.data.size();
+            return true;
+        }
+    }
+
+    void file_cache::clear()
+    {
+        files.clear();
     }
 }

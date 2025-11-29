@@ -11,6 +11,7 @@ public:
 private:
 	stw::http_server server;
 	stw::http_server_configuration config;
+	stw::file_cache fileCache;
 	void on_signal(int n);
 	void on_request(stw::http_connection *connection, const stw::http_request_info &request);
 };

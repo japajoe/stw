@@ -346,6 +346,9 @@ namespace stw
 
                 method = to_lower(parts[0]);
                 path = parts[1];
+
+				if(path.size() == 0)
+					path = "/";
             }
             else
             {

@@ -26,25 +26,38 @@ void web_app::on_signal(int n)
 {
 	if(n == SIGINT)
 		server.stop();
+#ifndef _WIN32
+	if(n == SIGPIPE)
+		std::cerr << "Broken pipe\n";
+#endif
 }
 
 void web_app::on_request(stw::http_connection *connection, const stw::http_request_info &request)
 {
-	//std::cout << "[" << stw::http_method_to_string(request.method) << "]: " << request.path << "\n";
+	std::cout << "[" << stw::http_method_to_string(request.method) << "]: " << request.path << "\n";
 
 	std::string path = config.publicHtmlPath + request.path;
+
+	uint8_t *fileData = nullptr;
+	uint64_t fileSize = 0;
 	
-	if(stw::file::exists(path))
+	if(stw::file::is_within_directory(path, config.publicHtmlPath))
 	{
-		if(stw::file::is_within_directory(path, config.publicHtmlPath))
+		if(fileCache.read_file(path, &fileData, &fileSize))
 		{
-			stw::file_stream fileStream(path, stw::file_access_read);
+			stw::memory_stream stream(fileData, fileSize);
 			std::string contentType = stw::get_http_content_type(path);
-			connection->write_response(200, nullptr, &fileStream, contentType);
+			connection->write_response(200, nullptr, &stream, contentType);
 			return;
 		}
 	}
 
-	stw::file_stream notFoundStream(config.privateHtmlPath + "/404.html", stw::file_access_read);
-	connection->write_response(404, nullptr, &notFoundStream, "text/html");
+	if(fileCache.read_file(config.privateHtmlPath + "/404.html", &fileData, &fileSize))
+	{
+		stw::memory_stream stream(fileData, fileSize);
+		connection->write_response(404, nullptr, &stream, "text/html");
+		return;
+	}
+
+	connection->write_response(404);
 }
