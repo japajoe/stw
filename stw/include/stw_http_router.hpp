@@ -5,6 +5,7 @@
 #include "stw_http_server.hpp"
 #include <vector>
 #include <regex>
+#include <functional>
 
 namespace stw
 {
