@@ -41,6 +41,7 @@ void web_app::on_request(stw::http_connection *connection, const stw::http_reque
 {
 	std::cout << "[" << stw::http_method_to_string(request.method) << "]: " << request.path << "\n";
 
+	// Check if a suitable route can be found for this request
 	auto route = router.get(request.path);
 
 	if(route)
@@ -52,8 +53,10 @@ void web_app::on_request(stw::http_connection *connection, const stw::http_reque
 	}
 	else
 	{
+		// If no route was found, the user may have requested a file instead
 		std::string path = config.publicHtmlPath + request.path;
 
+		// Checks if the file exists, and if it's inside the public html directory
 		if(stw::file::is_within_directory(path, config.publicHtmlPath))
 			send_file_content(connection, request, path);
 		else
@@ -65,7 +68,9 @@ void web_app::send_file_content(stw::http_connection *connection, const stw::htt
 {
 	uint8_t *fileData = nullptr;
 	uint64_t fileSize = 0;
-	
+
+	// Note: the file cache isn't really suitable for big files as they can fill up memory quickly.
+	// An eviction policy or file size limit could help here.
 	if(fileCache.read_file(filePath, &fileData, &fileSize))
 	{
 		stw::memory_stream stream(fileData, fileSize);
