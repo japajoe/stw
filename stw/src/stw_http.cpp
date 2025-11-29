@@ -1,7 +1,9 @@
 #include "stw_http.hpp"
+#include "stw_string.hpp"
 #include <cstring>
 #include <map>
 #include <filesystem>
+#include <algorithm>
 
 namespace stw
 {
@@ -140,23 +142,24 @@ namespace stw
 
     http_method string_to_http_method(const std::string &str)
     {
-        if(str == "get")
+        std::string method = stw::string::to_upper(str);
+        if(method == "GET")
             return http_method_get;
-        else if(str == "post")
+        else if(method == "POST")
             return http_method_post;
-        else if(str == "put")
+        else if(method == "PUT")
             return http_method_put;
-        else if(str == "patch")
+        else if(method == "PATCH")
             return http_method_patch;
-        else if(str == "delete")
+        else if(method == "DELETE")
             return http_method_delete;
-        else if(str == "head")
+        else if(method == "HEAD")
             return http_method_head;
-        else if(str == "options")
+        else if(method == "OPTIONS")
             return http_method_options;
-        else if(str == "trace")
+        else if(method == "TRACE")
             return http_method_trace;
-        else if(str == "connect")
+        else if(method == "CONNECT")
             return http_method_connect;
         else
             return http_method_unknown;

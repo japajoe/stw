@@ -19,6 +19,11 @@ void web_app::run()
 	if(!config.load_from_file("config.ini"))
 		return;
 
+	router.add(stw::http_method_get, "/", [&] (stw::http_connection *c, const stw::http_request_info &r) {
+		std::string filePath = config.publicHtmlPath + "/index.html";
+		send_file_content(c, r, filePath);
+	});
+
 	server.run(config);
 }
 
@@ -36,28 +41,39 @@ void web_app::on_request(stw::http_connection *connection, const stw::http_reque
 {
 	std::cout << "[" << stw::http_method_to_string(request.method) << "]: " << request.path << "\n";
 
-	std::string path = config.publicHtmlPath + request.path;
+	auto route = router.get(request.path);
 
+	if(route)
+	{
+		if(route->method == request.method)
+			route->handler(connection, request);
+		else
+			connection->write_response(stw::http_status_code_method_not_allowed);
+	}
+	else
+	{
+		std::string path = config.publicHtmlPath + request.path;
+
+		if(stw::file::is_within_directory(path, config.publicHtmlPath))
+			send_file_content(connection, request, path);
+		else
+			send_file_content(connection, request, config.privateHtmlPath + "/404.html");
+	}
+}
+
+void web_app::send_file_content(stw::http_connection *connection, const stw::http_request_info &request, const std::string &filePath)
+{
 	uint8_t *fileData = nullptr;
 	uint64_t fileSize = 0;
 	
-	if(stw::file::is_within_directory(path, config.publicHtmlPath))
-	{
-		if(fileCache.read_file(path, &fileData, &fileSize))
-		{
-			stw::memory_stream stream(fileData, fileSize);
-			std::string contentType = stw::get_http_content_type(path);
-			connection->write_response(200, nullptr, &stream, contentType);
-			return;
-		}
-	}
-
-	if(fileCache.read_file(config.privateHtmlPath + "/404.html", &fileData, &fileSize))
+	if(fileCache.read_file(filePath, &fileData, &fileSize))
 	{
 		stw::memory_stream stream(fileData, fileSize);
-		connection->write_response(404, nullptr, &stream, "text/html");
-		return;
+		std::string contentType = stw::get_http_content_type(filePath);
+		connection->write_response(stw::http_status_code_ok, nullptr, &stream, contentType);
 	}
-
-	connection->write_response(404);
+	else
+	{
+		connection->write_response(stw::http_status_code_not_found);
+	}
 }

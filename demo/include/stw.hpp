@@ -7,6 +7,7 @@
 #include "../../stw/include/stw_file.hpp"
 #include "../../stw/include/stw_http_client.hpp"
 #include "../../stw/include/stw_http.hpp"
+#include "../../stw/include/stw_http_router.hpp"
 #include "../../stw/include/stw_http_server.hpp"
 #include "../../stw/include/stw_ini_reader.hpp"
 #include "../../stw/include/stw_runtime.hpp"
