@@ -86,6 +86,7 @@ namespace stw
 		bool set_timeout(uint32_t seconds);
 		bool set_blocking(bool block);
 		int32_t get_file_descriptor() const;
+		std::string get_ip() const;
 		static bool resolve(const std::string &uri, std::string &ip, uint16_t &port, std::string &hostname, bool forceIPv4);
 	private:
 		socket_t s;

@@ -39,7 +39,7 @@ void web_app::on_signal(int n)
 
 void web_app::on_request(stw::http_connection *connection, const stw::http_request_info &request)
 {
-	std::cout << "[" << stw::http_method_to_string(request.method) << "]: " << request.path << "\n";
+	std::cout << connection->get_ip() << " [" << stw::http_method_to_string(request.method) << "]: " << request.path << "\n";
 
 	// Check if a suitable route can be found for this request
 	auto route = router.get(request.path);
@@ -56,7 +56,7 @@ void web_app::on_request(stw::http_connection *connection, const stw::http_reque
 		// If no route was found, the user may have requested a file instead
 		std::string path = config.publicHtmlPath + request.path;
 
-		// Checks if the file exists, and if it's inside the public html directory
+		// Checks if the file exists, and if it's inside the public html directory or any of its children
 		if(stw::file::is_within_directory(path, config.publicHtmlPath))
 			send_file_content(connection, request, path);
 		else
@@ -69,7 +69,7 @@ void web_app::send_file_content(stw::http_connection *connection, const stw::htt
 	constexpr size_t MAX_FILE_SIZE = 1024 * 1024;
 	size_t fileSize = stw::file::get_size(filePath);
 
-	// Only files less than or equal to MAX_FILE_SIZE get cached
+	// Only files with size less than or equal to MAX_FILE_SIZE get cached
 	if(fileSize <= MAX_FILE_SIZE)
 	{
 		uint8_t *fileData = nullptr;

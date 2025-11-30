@@ -557,6 +557,34 @@ namespace stw
 		return s.fd;
 	}
 
+    std::string socket::get_ip() const
+    {
+        if(s.fd < 0)
+        {
+            if(s.addressFamily == address_family_af_inet)
+                return "0.0.0.0";
+            else
+                return "::";
+        }
+
+        std::string result;
+
+        if(s.addressFamily == address_family_af_inet)
+        {
+            result.resize(INET_ADDRSTRLEN);
+            if(inet_ntop(AF_INET, &s.address.ipv4.sin_addr, result.data(), INET_ADDRSTRLEN) != nullptr)
+                return result;
+            return "0.0.0.0";
+        }
+        else
+        {
+            result.resize(INET6_ADDRSTRLEN);
+            if(inet_ntop(AF_INET6, &s.address.ipv6.sin6_addr, result.data(), INET6_ADDRSTRLEN) != nullptr)
+                return result;
+            return "::";
+        }
+    }
+
 	bool socket::resolve(const std::string &uri, std::string &ip, uint16_t &port, std::string &hostname, bool forceIPv4)
 	{
 		std::string scheme, host, path;

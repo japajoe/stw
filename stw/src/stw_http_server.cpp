@@ -541,6 +541,11 @@ namespace stw
 		return s.is_valid();
 	}
 
+	std::string http_connection::get_ip() const
+	{
+		return connection.get_ip();
+	}
+
 	void http_server_configuration::load_default() 
 	{
 		port = 8080;

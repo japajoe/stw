@@ -31,6 +31,7 @@ namespace stw
 		bool write_response(uint32_t statusCode, const http_headers *headers, stream *content, const std::string &contentType);
 		void close();
 		bool is_secure() const;
+		std::string get_ip() const;
 	private:
 		socket connection;
 		ssl s;
