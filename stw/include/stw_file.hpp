@@ -4,7 +4,6 @@
 #include <string>
 #include <vector>
 #include <cstdint>
-#include <unordered_map>
 
 namespace stw::file
 {
@@ -17,24 +16,6 @@ namespace stw::file
 	bool is_within_directory(const std::string &filePath, const std::string &directoryPath);
 	std::string get_name(const std::string &filePath, bool withExtension);
 	std::string get_extension(const std::string &filePath);
-}
-
-namespace stw
-{
-	struct file_info
-	{
-		std::vector<uint8_t> data;
-		uint64_t lastModified;
-	};
-
-	class file_cache
-	{
-	public:
-		bool read_file(const std::string &filePath, uint8_t **pData, uint64_t *size);
-		void clear();
-	private:
-		std::unordered_map<std::string,file_info> files;
-	};
 }
 
 #endif

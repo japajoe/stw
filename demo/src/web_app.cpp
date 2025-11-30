@@ -69,6 +69,10 @@ void web_app::send_file_content(stw::http_connection *connection, const std::str
 	constexpr size_t MAX_FILE_SIZE = 1024 * 1024;
 	size_t fileSize = stw::file::get_size(filePath);
 
+	const stw::http_headers headers = {
+		{ "Cache-Control", "max-age=3600" }
+	};
+
 	// Only files with size less than or equal to MAX_FILE_SIZE get cached
 	if(fileSize <= MAX_FILE_SIZE)
 	{
@@ -79,7 +83,7 @@ void web_app::send_file_content(stw::http_connection *connection, const std::str
 		{
 			stw::memory_stream stream(fileData, fileSize);
 			std::string contentType = stw::get_http_content_type(filePath);
-			connection->write_response(stw::http_status_code_ok, nullptr, &stream, contentType);
+			connection->write_response(stw::http_status_code_ok, &headers, &stream, contentType);
 			return;
 		}
 	}
@@ -89,7 +93,7 @@ void web_app::send_file_content(stw::http_connection *connection, const std::str
 		{
 			stw::file_stream stream(filePath, stw::file_access_read);
 			std::string contentType = stw::get_http_content_type(filePath);
-			connection->write_response(stw::http_status_code_ok, nullptr, &stream, contentType);
+			connection->write_response(stw::http_status_code_ok, &headers, &stream, contentType);
 			return;
 		}
 	}
