@@ -8,10 +8,6 @@ web_app::web_app()
 #ifndef _WIN32
 	stw::signal::register_signal(SIGPIPE);
 #endif
-
-	server.onRequest = [this] (stw::http_connection *c, const stw::http_request_info &r) {
-		on_request(c, r);
-	};
 }
 
 void web_app::run()
@@ -21,8 +17,12 @@ void web_app::run()
 
 	router.add(stw::http_method_get, "/", [&] (stw::http_connection *c, const stw::http_request_info &r) {
 		std::string filePath = config.publicHtmlPath + "/index.html";
-		send_file_content(c, r, filePath);
+		send_file_content(c, filePath);
 	});
+
+	server.onRequest = [this] (stw::http_connection *c, const stw::http_request_info &r) {
+		on_request(c, r);
+	};
 
 	server.run(config);
 }
@@ -58,13 +58,13 @@ void web_app::on_request(stw::http_connection *connection, const stw::http_reque
 
 		// Checks if the file exists, and if it's inside the public html directory or any of its children
 		if(stw::file::is_within_directory(path, config.publicHtmlPath))
-			send_file_content(connection, request, path);
+			send_file_content(connection, path);
 		else
-			send_file_content(connection, request, config.privateHtmlPath + "/404.html");
+			send_file_content(connection, config.privateHtmlPath + "/404.html");
 	}
 }
 
-void web_app::send_file_content(stw::http_connection *connection, const stw::http_request_info &request, const std::string &filePath)
+void web_app::send_file_content(stw::http_connection *connection, const std::string &filePath)
 {
 	constexpr size_t MAX_FILE_SIZE = 1024 * 1024;
 	size_t fileSize = stw::file::get_size(filePath);
