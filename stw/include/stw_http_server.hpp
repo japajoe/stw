@@ -15,6 +15,7 @@ namespace stw
 	class http_connection
 	{
 	public:
+		http_connection(socket &connection);
 		http_connection(socket &connection, ssl &s);
 		http_connection(const http_connection &other);
 		http_connection(http_connection &&other) noexcept;

@@ -70,7 +70,7 @@ namespace stw
 		if(!listener.bind(config.bindAddress, config.port))
 			return;
 
-		if(!listener.listen(10))
+		if(!listener.listen(100))
 			return;
 			
 		listener.set_timeout(1);
@@ -83,8 +83,7 @@ namespace stw
 			
 			if(listener.accept(&client))
 			{
-				ssl s;
-				http_connection connection(client, s);
+				http_connection connection(client);
 				auto result = std::async(std::launch::async, &http_server::on_request, this, std::move(connection));
 				(void)result;
 			}
@@ -100,7 +99,7 @@ namespace stw
 		if(!listener.bind(config.bindAddress, config.portHttps))
 			return;
 		
-		if(!listener.listen(10))
+		if(!listener.listen(100))
 			return;
 			
 		listener.set_timeout(1);
@@ -374,6 +373,11 @@ namespace stw
         return count > 0;
     }
 
+	http_connection::http_connection(socket &connection)
+	{
+		this->connection = std::move(connection);
+	}
+
 	http_connection::http_connection(socket &connection, ssl &s)
 	{
 		this->connection = std::move(connection);
@@ -484,7 +488,7 @@ namespace stw
 		{
 			if(content != nullptr && content->get_length() > 0)
 			{
-				std::vector<uint8_t> buffer(4096);
+				std::vector<uint8_t> buffer(8192);
 
 				int64_t nBytes = 0;
 				
