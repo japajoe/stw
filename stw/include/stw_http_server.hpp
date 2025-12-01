@@ -5,6 +5,7 @@
 #include "stw_ssl.hpp"
 #include "stw_http.hpp"
 #include "stw_stream.hpp"
+#include "stw_thread_pool.hpp"
 #include <string>
 #include <functional>
 #include <vector>
@@ -78,9 +79,10 @@ namespace stw
 		ssl_context sslContext;
 		http_server_configuration config;
 		std::atomic<bool> quit;
+		thread_pool threadPool;
 		void accept_http();
 		void accept_https();
-		void on_request(http_connection connection);
+		void on_request(http_connection *connection);
 		http_header_error read_header(http_connection *connection, std::string &header);
 		bool parse_request_header(const std::string &responseText, http_headers &header, std::string &method, std::string &path, uint64_t &contentLength);
 	};

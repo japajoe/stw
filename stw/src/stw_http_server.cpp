@@ -83,9 +83,11 @@ namespace stw
 			
 			if(listener.accept(&client))
 			{
-				http_connection connection(client);
-				auto result = std::async(std::launch::async, &http_server::on_request, this, std::move(connection));
-				(void)result;
+				http_connection *connection = new http_connection(client);
+
+				threadPool.enqueue([this, c = connection] () {
+					on_request(c);
+				});
 			}
 		}
 
@@ -132,9 +134,11 @@ namespace stw
 					continue;
 				}
 
-				http_connection connection(client, s);
-				auto result = std::async(std::launch::async, &http_server::on_request, this, std::move(connection));
-				(void)result;
+				http_connection *connection = new http_connection(client, s);
+
+				threadPool.enqueue([this, c = connection] () {
+					on_request(c);
+				});
 			}
 		}
 
@@ -143,14 +147,14 @@ namespace stw
 		sslContext.destroy();
 	}
 
-	void http_server::on_request(http_connection connection)
+	void http_server::on_request(http_connection *connection)
 	{
 		std::string headerText;
 
-		if(read_header(&connection, headerText) != http_header_error_none)
+		if(read_header(connection, headerText) != http_header_error_none)
 		{
-			connection.write_response(http_status_code_bad_request);
-			connection.close();
+			connection->write_response(http_status_code_bad_request);
+			connection->close();
 			return;
 		}
 
@@ -161,12 +165,12 @@ namespace stw
 
 		if(!parse_request_header(headerText, headers, method, path, contentLength))
 		{
-			connection.write_response(http_status_code_bad_request);
-			connection.close();
+			connection->write_response(http_status_code_bad_request);
+			connection->close();
 			return;
 		}
 
-		if(!connection.is_secure() && config.useHttps && config.useHttpsForwarding) 
+		if(!connection->is_secure() && config.useHttps && config.useHttpsForwarding) 
 		{
 			if(headers.contains("upgrade-insecure-requests"))
 			{
@@ -176,8 +180,8 @@ namespace stw
 					http_headers responseHeaders;
 					responseHeaders["Location"] = "https://" + config.hostName + ":" + std::to_string(config.portHttps) + path;
 					responseHeaders["Connection"] = "close";
-					connection.write_response(http_status_code_moved_permanently, &responseHeaders);
-					connection.close();
+					connection->write_response(http_status_code_moved_permanently, &responseHeaders);
+					connection->close();
 					return;
 				}
 			}
@@ -192,16 +196,18 @@ namespace stw
 				.method = httpMethod,
 				.path = path,
 				.contentLength = contentLength
-			};
+		};
 
-			onRequest(&connection, request);
-			connection.close();
+		onRequest(connection, request);
+			connection->close();
 		}
 		else
 		{
-			connection.write_response(http_status_code_not_found);
-			connection.close();
+			connection->write_response(http_status_code_not_found);
+			connection->close();
 		}
+
+		delete connection;
 	}
 
 	http_header_error http_server::read_header(http_connection *connection, std::string &header)
