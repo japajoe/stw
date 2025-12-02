@@ -85,9 +85,17 @@ namespace stw
 			{
 				http_connection *connection = new http_connection(client);
 
-				threadPool.enqueue([this, c = connection] () {
-					on_request(c);
-				});
+				if(threadPool.is_available())
+				{
+					threadPool.enqueue([this, c = connection] () {
+						on_request(c);
+					});
+				}
+				else
+				{
+					auto task = std::async(std::launch::async, &http_server::on_request, this, connection);
+					(void)task;
+				}
 			}
 		}
 
@@ -136,9 +144,17 @@ namespace stw
 
 				http_connection *connection = new http_connection(client, s);
 
-				threadPool.enqueue([this, c = connection] () {
-					on_request(c);
-				});
+				if(threadPool.is_available())
+				{
+					threadPool.enqueue([this, c = connection] () {
+						on_request(c);
+					});
+				}
+				else
+				{
+					auto task = std::async(std::launch::async, &http_server::on_request, this, connection);
+					(void)task;
+				}
 			}
 		}
 

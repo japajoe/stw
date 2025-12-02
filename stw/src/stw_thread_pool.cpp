@@ -4,10 +4,14 @@ namespace stw
 {
 	thread_pool::thread_pool()
 	{
-		for (size_t i = 0; i < 4; ++i) 
+		auto numThreads = std::thread::hardware_concurrency();
+
+		for (size_t i = 0; i < numThreads; ++i) 
 		{
 			workers.push_back(std::thread(&thread_pool::worker_thread, this));
 		}
+
+		activeThreads = 0;
 	}
 
 	thread_pool::thread_pool(size_t numThreads)
@@ -16,6 +20,8 @@ namespace stw
 		{
 			workers.push_back(std::thread(&thread_pool::worker_thread, this));
 		}
+
+		activeThreads = 0;
 	}
 
 	thread_pool::~thread_pool()
@@ -57,7 +63,14 @@ namespace stw
 				taskQueue.pop();
 			}
 			
+			activeThreads++;
 			task();
+			activeThreads--;
 		}
+	}
+
+	bool thread_pool::is_available() const
+	{
+		return activeThreads < workers.size();
 	}
 }
