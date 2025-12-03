@@ -402,11 +402,6 @@ namespace stw
         if(gHttpClientCount.load() == 0)
         {
         #ifdef _WIN32
-            WSADATA wsaData;
-            if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) 
-            {
-                write_error("Failed to initialize winsock");
-            }
             std::string curlPath = "libcurl-x64.dll";
         #else
             std::string curlPath;            
@@ -428,9 +423,6 @@ namespace stw
 	{
         if(gHttpClientCount.load() == 1)
         {
-        #ifdef _WIN32
-            WSACleanup();
-        #endif
             curl::global_cleanup();
             curl::close_library();
         }
