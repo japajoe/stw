@@ -19,7 +19,7 @@ namespace stw
         auto getLastModifiedTime = [&] () -> uint64_t {
             std::filesystem::path p(filePath);
             auto lastWriteTime = std::filesystem::last_write_time(p);
-            auto sctp = decltype(lastWriteTime)::clock::to_sys(lastWriteTime);
+            auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(lastWriteTime);
             auto duration = sctp.time_since_epoch();
             uint64_t lastModified = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
             return lastModified;
