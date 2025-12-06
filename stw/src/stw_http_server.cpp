@@ -1,6 +1,7 @@
 #include "stw_http_server.hpp"
 #include "stw_ini_reader.hpp"
 #include "stw_directory.hpp"
+#include <algorithm>
 #include <iostream>
 #include <future>
 #include <utility>
