@@ -1,6 +1,6 @@
 #include "stw_http_client.hpp"
 #include "stw_runtime.hpp"
-//#include <curl/curl.h>
+#include "stw_string.hpp"
 #include <vector>
 #include <sstream>
 #include <cstring>
@@ -342,60 +342,6 @@ namespace stw
 		std::cerr << message << '\n';
     }
 
-    static std::string string_trim_start(const std::string& str) 
-    {
-        size_t start = 0;
-
-        // Find the first non-whitespace character
-        while (start < str.length() && std::isspace(static_cast<unsigned char>(str[start]))) 
-        {
-            ++start;
-        }
-
-        // Return the substring from the first non-whitespace character to the end
-        return str.substr(start);
-    }
-
-    static std::vector<std::string> string_split(const std::string& str, char separator, size_t maxParts = 0) 
-    {
-        std::vector<std::string> result;
-        size_t start = 0;
-        size_t end = 0;
-
-        while ((end = str.find(separator, start)) != std::string::npos) 
-        {
-            result.push_back(str.substr(start, end - start));
-            start = end + 1;
-
-            if (maxParts > 0 && result.size() >= maxParts - 1) 
-                break; // Stop if we have reached maximum parts
-        }
-        result.push_back(str.substr(start)); // Add the last part
-        return result;
-    }
-    
-    static bool try_parse_int32(const std::string &value, int32_t &v)
-    {
-        std::stringstream ss(value);
-        ss >> v;
-
-        if (ss.fail() || !ss.eof())
-            return false;
-        
-        return true;
-    }
-
-    static bool try_parse_uint64(const std::string &value, uint64_t &v)
-    {
-        std::stringstream ss(value);
-        ss >> v;
-
-        if (ss.fail() || !ss.eof())
-            return false;
-        
-        return true;
-    }
-
 	http_client::http_client()
 	{
         validateCertificate = true;
@@ -605,22 +551,22 @@ namespace stw
                 if(line[line.size() - 1] == ' ')
                     line.pop_back();
 
-                auto parts = string_split(line, ' ', 0);
+                auto parts = string::split(line, ' ', 0);
                 
                 if(parts.size() < 2)
                     return false;
 
-                if(!try_parse_int32(parts[1], statusCode))
+                if(!string::try_parse_int32(parts[1], statusCode))
                     return false;
             }
             else
             {
-                auto parts = string_split(line, ':', 2);
+                auto parts = string::split(line, ':', 2);
 
                 if(parts.size() == 2)
                 {
-                    parts[0] = to_lower(parts[0]);
-                    parts[1] = string_trim_start(parts[1]);
+                    parts[0] = string::to_lower(parts[0]);
+                    parts[1] = string::trim_start(parts[1]);
                     header[parts[0]] = parts[1];
                 }
             }
@@ -630,7 +576,7 @@ namespace stw
 
         if(header.contains("content-length"))
         {
-            if(!try_parse_uint64(header["content-length"], contentLength))
+            if(!string::try_parse_uint64(header["content-length"], contentLength))
                 contentLength = 0;
         }
 

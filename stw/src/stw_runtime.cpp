@@ -104,7 +104,7 @@ namespace stw::runtime
 		char cmd[256];
 		snprintf(cmd, sizeof(cmd), "ldconfig -p 2>/dev/null | grep %s", libraryName.c_str());
 		
-		FILE* pipe = popen(cmd, "r");
+		FILE *pipe = popen(cmd, "r");
 		
 		if (!pipe) 
 		{
@@ -123,8 +123,9 @@ namespace stw::runtime
 				while (*pos == ' ') 
 					pos++;
 				// Remove newline character
-				char* newline = strchr(pos, '\n');
-				if (newline) *newline = '\0';
+				char *newline = strchr(pos, '\n');
+				if (newline) 
+					*newline = '\0';
 				pclose(pipe);
 				int len = strlen(pos);
 				char *outputPath = new char[len+1];
