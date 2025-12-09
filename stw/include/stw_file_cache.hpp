@@ -5,6 +5,7 @@
 #include <vector>
 #include <unordered_map>
 #include <cstdint>
+#include <mutex>
 
 namespace stw
 {
@@ -14,7 +15,6 @@ namespace stw
 		file_cache();
 		bool read_file(const std::string &filePath, uint8_t **pData, uint64_t *size);
 		void clear();
-		void invalidate();
 		void set_max_age(uint64_t maxAgeInSeconds);
 		uint64_t get_max_age() const;
 		struct file_info
@@ -26,7 +26,9 @@ namespace stw
 		};
 	private:
 		std::unordered_map<std::string,file_info> files;
+		mutable std::mutex mutex;
 		uint64_t maxAge;
+		void invalidate();
 	};
 }
 

@@ -11,6 +11,8 @@ namespace stw
 
     bool file_cache::read_file(const std::string &filePath, uint8_t **pData, uint64_t *size)
     {
+        std::lock_guard<std::mutex> lock(mutex);
+
         invalidate();
 
         if(!stw::file::exists(filePath))
@@ -69,6 +71,7 @@ namespace stw
 
     void file_cache::clear()
     {
+        std::lock_guard<std::mutex> lock(mutex); 
         files.clear();
     }
 
@@ -91,6 +94,7 @@ namespace stw
 
     void file_cache::set_max_age(uint64_t maxAgeInSeconds)
     {
+        std::lock_guard<std::mutex> lock(mutex); 
         if(maxAgeInSeconds < 1)
             maxAgeInSeconds = 1;
         this->maxAge = maxAgeInSeconds * 1000;
@@ -98,6 +102,7 @@ namespace stw
 
     uint64_t file_cache::get_max_age() const
     {
+        std::lock_guard<std::mutex> lock(mutex);
         return maxAge / 1000;
     }
 }

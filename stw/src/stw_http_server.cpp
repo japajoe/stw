@@ -1,6 +1,7 @@
 #include "stw_http_server.hpp"
 #include "stw_ini_reader.hpp"
 #include "stw_directory.hpp"
+#include "stw_string.hpp"
 #include <algorithm>
 #include <iostream>
 #include <future>
@@ -86,16 +87,11 @@ namespace stw
 			{
 				http_connection *connection = new http_connection(client);
 
-				if(threadPool.is_available())
+				if(connection != nullptr)
 				{
 					threadPool.enqueue([this, c = connection] () {
 						on_request(c);
 					});
-				}
-				else
-				{
-					auto task = std::async(std::launch::async, &http_server::on_request, this, connection);
-					(void)task;
 				}
 			}
 		}
@@ -145,16 +141,11 @@ namespace stw
 
 				http_connection *connection = new http_connection(client, s);
 
-				if(threadPool.is_available())
+				if(connection != nullptr)
 				{
 					threadPool.enqueue([this, c = connection] () {
 						on_request(c);
 					});
-				}
-				else
-				{
-					auto task = std::async(std::launch::async, &http_server::on_request, this, connection);
-					(void)task;
 				}
 			}
 		}
@@ -213,16 +204,16 @@ namespace stw
 				.method = httpMethod,
 				.path = path,
 				.contentLength = contentLength
-		};
+			};
 
-		onRequest(connection, request);
-			connection->close();
+			onRequest(connection, request);
 		}
 		else
 		{
 			connection->write_response(http_status_code_not_found);
-			connection->close();
 		}
+		
+		connection->close();
 
 		delete connection;
 	}
@@ -256,6 +247,13 @@ namespace stw
         {
             int64_t bytesPeeked = connection->peek(pBuffer, bufferSize);
 
+            if (bytesPeeked < 0)
+                return http_header_error_failed_to_peek;
+
+            //Don't loop indefinitely...
+            if(bytesPeeked == 0)
+                break;
+
             totalHeaderSize += bytesPeeked;
 
             if(totalHeaderSize > maxHeaderSize) 
@@ -263,13 +261,6 @@ namespace stw
                 printf("header_error_max_size_exceeded [1], %zu/%zu\n", totalHeaderSize, maxHeaderSize);
                 return http_header_error_max_size_exceeded;
             }
-
-            if (bytesPeeked < 0)
-                return http_header_error_failed_to_peek;
-
-            //Don't loop indefinitely...
-            if(bytesPeeked == 0)
-                break;
             
             // Look for the end of the header (double CRLF)
             int64_t end = find_header_end(pBuffer, "\r\n\r\n", bytesPeeked, 4);
@@ -302,48 +293,7 @@ namespace stw
 
 	bool http_server::parse_request_header(const std::string &responseText, http_headers &header, std::string &method, std::string &path, uint64_t &contentLength)
     {
-        auto to_lower = [] (const std::string &str) -> std::string {
-            std::string lower_str = str;
-            std::transform(lower_str.begin(), lower_str.end(), lower_str.begin(),
-                        [](unsigned char c) { return std::tolower(c); });
-            return lower_str;
-        };
-
-		auto string_split = [] (const std::string& str, char separator, size_t maxParts) -> std::vector<std::string> {
-			std::vector<std::string> result;
-			size_t start = 0;
-			size_t end = 0;
-
-			while ((end = str.find(separator, start)) != std::string::npos) 
-			{
-				result.push_back(str.substr(start, end - start));
-				start = end + 1;
-
-				if (maxParts > 0 && result.size() >= maxParts - 1) 
-					break;
-			}
-			result.push_back(str.substr(start));
-			return result;
-		};
-
-		auto string_trim_start = [] (const std::string& str) -> std::string {
-			size_t start = 0;
-			while (start < str.length() && std::isspace(static_cast<unsigned char>(str[start]))) 
-			{
-				++start;
-			}
-			return str.substr(start);
-		};
-
-		auto try_parse_uint64 = [] (const std::string &value, uint64_t &v) -> bool {
-			std::stringstream ss(value);
-			ss >> v;
-
-			if (ss.fail() || !ss.eof())
-				return false;
-			
-			return true;
-		};
+		contentLength = 0;
 
         std::istringstream responseStream(responseText);
         std::string line;
@@ -361,12 +311,12 @@ namespace stw
                 if(line[line.size() - 1] == ' ')
                     line.pop_back();
 
-                auto parts = string_split(line, ' ', 0);
+                auto parts = string::split(line, ' ', 0);
                 
                 if(parts.size() < 2)
                     return false;
 
-                method = to_lower(parts[0]);
+                method = string::to_lower(parts[0]);
                 path = parts[1];
 
 				if(path.size() == 0)
@@ -374,12 +324,12 @@ namespace stw
             }
             else
             {
-                auto parts = string_split(line, ':', 2);
+                auto parts = string::split(line, ':', 2);
 
                 if(parts.size() == 2)
                 {
-                    parts[0] = to_lower(parts[0]);
-                    parts[1] = string_trim_start(parts[1]);
+                    parts[0] = string::to_lower(parts[0]);
+                    parts[1] = string::trim_start(parts[1]);
                     header[parts[0]] = parts[1];
                 }
             }
@@ -389,7 +339,7 @@ namespace stw
 
         if(header.contains("content-length"))
         {
-            if(!try_parse_uint64(header["content-length"], contentLength))
+            if(!string::try_parse_uint64(header["content-length"], contentLength))
                 contentLength = 0;
         }
 
