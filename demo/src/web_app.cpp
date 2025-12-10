@@ -7,8 +7,10 @@ web_app::web_app()
 		if(n == SIGINT)
 			server.stop();
 	#ifndef _WIN32
-		if(n == SIGPIPE)
-			std::cerr << "Broken pipe\n";
+		if(n == SIGPIPE) 
+		{
+			//std::cerr << "Broken pipe\n";
+		}
 	#endif
 	});
 	

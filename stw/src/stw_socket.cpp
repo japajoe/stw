@@ -414,11 +414,24 @@ namespace stw
 	{
 		if(s.fd >= 0) 
 		{
+            auto emptyBuffers = [this] () {
+                std::vector<uint8_t> buffer(1024);
+                while(true) 
+                {
+                    int64_t n = read(buffer.data(), buffer.size());
+                    if(n <= 0)
+                        break;
+                }
+            };
+
+
         #ifdef _WIN32
             ::shutdown(s.fd, SD_SEND);
+            emptyBuffers();
             closesocket(s.fd);
         #else
             ::shutdown(s.fd, SHUT_WR);
+            emptyBuffers();
             ::close(s.fd);
         #endif
             s.fd = -1;
