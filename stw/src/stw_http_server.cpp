@@ -105,7 +105,7 @@ namespace stw
 
 		if(!listener.bind(config.bindAddress, config.portHttps))
 			return;
-		
+
 		if(!listener.listen(100))
 			return;
 			
@@ -455,6 +455,8 @@ namespace stw
 			responseText += "Content-Type: " + contentType + "\r\n";
 		}
 
+		responseText += "Connection: close\r\n";
+
 		responseText += "\r\n";
 
 		if(write_all(responseText.data(), responseText.size()))
@@ -478,7 +480,7 @@ namespace stw
 	bool http_connection::write_response(uint32_t statusCode, const http_headers *headers, const void *content, uint64_t contentLength, const std::string &contentType)
 	{
 		std::string responseText = "HTTP/1.1 " + std::to_string(statusCode) + "\r\n";
-		
+
 		if(headers)
 		{
 			if(headers->size() > 0)
@@ -495,6 +497,8 @@ namespace stw
 			responseText += "Content-Length: " + std::to_string(contentLength) + "\r\n";
 			responseText += "Content-Type: " + contentType + "\r\n";
 		}
+
+		responseText += "Connection: close\r\n";
 
 		responseText += "\r\n";
 

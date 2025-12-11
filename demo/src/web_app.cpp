@@ -9,7 +9,7 @@ web_app::web_app()
 	#ifndef _WIN32
 		if(n == SIGPIPE) 
 		{
-			//std::cerr << "Broken pipe\n";
+			//std::cout << "Broken pipe\n";
 		}
 	#endif
 	});

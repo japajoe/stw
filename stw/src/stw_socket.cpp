@@ -565,6 +565,12 @@ namespace stw
     #endif
     }
 
+    bool socket::set_no_delay(bool noDelay)
+    {
+        const int32_t noDelayFlag = noDelay ? 1 : 0;
+        return set_option(IPPROTO_TCP, TCP_NODELAY, &noDelayFlag, sizeof(int32_t));
+    }
+
 	int32_t socket::get_file_descriptor() const
 	{
 		return s.fd;
