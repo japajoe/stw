@@ -85,6 +85,7 @@ namespace stw
 		void on_request(http_connection *connection);
 		http_header_error read_header(http_connection *connection, std::string &header);
 		bool parse_request_header(const std::string &responseText, http_headers &header, std::string &method, std::string &path, uint64_t &contentLength);
+		bool parse_request_header2(const std::string &responseText, http_headers &header, std::string &method, std::string &path, uint64_t &contentLength);		
 	};
 }
 

@@ -171,7 +171,7 @@ namespace stw
 		std::string path;
 		uint64_t contentLength;
 
-		if(!parse_request_header(headerText, headers, method, path, contentLength))
+		if(!parse_request_header2(headerText, headers, method, path, contentLength))
 		{
 			connection->write_response(http_status_code_bad_request);
 			connection->close();
@@ -231,7 +231,7 @@ namespace stw
         int64_t totalHeaderSize = 0;
         bool endFound = false;
 
-        auto find_header_end = [] (const char* haystack, const char* needle, size_t haystackLength, size_t needleLength) -> int64_t {
+        auto findHeaderEnd = [] (const char* haystack, const char* needle, size_t haystackLength, size_t needleLength) -> int64_t {
             for (size_t i = 0; i <= haystackLength - needleLength; ++i) 
 			{
                 if (std::memcmp(haystack + i, needle, needleLength) == 0)
@@ -263,7 +263,7 @@ namespace stw
             }
             
             // Look for the end of the header (double CRLF)
-            int64_t end = find_header_end(pBuffer, "\r\n\r\n", bytesPeeked, 4);
+            int64_t end = findHeaderEnd(pBuffer, "\r\n\r\n", bytesPeeked, 4);
 
             if(end >= 0)
             {
@@ -278,8 +278,8 @@ namespace stw
 
         // Now read the header
         header.resize(headerEnd);
-        int64_t bytesRead = connection->read(header.data(), headerEnd);
-        if (bytesRead < 0) 
+        int64_t bytesRead = connection->read_all(header.data(), headerEnd);
+        if (bytesRead <= 0) 
             return http_header_error_failed_to_read;
 
         if(header.size() > maxHeaderSize) 
@@ -297,7 +297,7 @@ namespace stw
 
         std::istringstream responseStream(responseText);
         std::string line;
-        size_t count = 0;
+        size_t currentLine = 0;
 
         while(std::getline(responseStream, line))
         {
@@ -306,7 +306,7 @@ namespace stw
             if(line.size() == 0)
                 continue;
 
-            if(count == 0)
+            if(currentLine == 0)
             {
                 if(line[line.size() - 1] == ' ')
                     line.pop_back();
@@ -334,7 +334,7 @@ namespace stw
                 }
             }
 
-            count++;
+            currentLine++;
         }
 
         if(header.contains("content-length"))
@@ -343,8 +343,82 @@ namespace stw
                 contentLength = 0;
         }
 
-        return count > 0;
+        return currentLine > 0;
     }
+
+	bool http_server::parse_request_header2(const std::string &responseText, http_headers &header, std::string &method, std::string &path, uint64_t &contentLength)
+	{
+		size_t pos = 0;
+		size_t end;
+
+		// Find the end of the headers section (double CRLF)
+		end = responseText.find("\r\n\r\n", pos);
+		if (end == std::string::npos)
+			return false; // No headers found
+
+		// Parse the request line (first line before the headers)
+		size_t requestLineEnd = responseText.find("\r\n", pos);
+		
+		if (requestLineEnd != std::string::npos && requestLineEnd < end) 
+		{
+			std::string requestLine = responseText.substr(pos, requestLineEnd - pos);
+			std::istringstream requestStream(requestLine);
+			
+			// Extract method and path
+			requestStream >> method >> path;
+
+			// Check if method and path were extracted successfully
+			if (method.empty() || path.empty())
+				return false;
+
+			pos = requestLineEnd + 2; // Move past the request line
+		} 
+		else
+			return false; // Invalid request line
+
+		// Initialize content length to 0
+		contentLength = 0;
+
+		// Iterate through the headers section
+		size_t lineEnd;
+		
+		while ((lineEnd = responseText.find("\r\n", pos)) != std::string::npos && pos < end) 
+		{
+			// Get the header line
+			std::string line = responseText.substr(pos, lineEnd - pos);
+			pos = lineEnd + 2; // Move to the next line
+
+			// Split the line into key and value
+			size_t delimiterPos = line.find(": ");
+			if (delimiterPos != std::string::npos) 
+			{
+				std::string key = line.substr(0, delimiterPos);
+				std::string value = line.substr(delimiterPos + 2); // Skip the ": "
+
+				// Insert into the headers map
+				header[key] = value;
+
+				// Check for Content-Length
+				if (key == "Content-Length" || key == "content-length")
+				{
+					try 
+					{
+						contentLength = std::stoull(value);
+					} 
+					catch (const std::invalid_argument&) 
+					{
+						contentLength = 0; // Handle invalid value
+					} 
+					catch (const std::out_of_range&) 
+					{
+						contentLength = UINT64_MAX; // Handle out of range
+					}
+				}
+			}
+		}
+
+		return true;
+	}
 
 	http_connection::http_connection(socket &connection)
 	{
@@ -436,7 +510,8 @@ namespace stw
 
 	bool http_connection::write_response(uint32_t statusCode, const http_headers *headers, stream *content, const std::string &contentType)
 	{
-		std::string responseText = "HTTP/1.1 " + std::to_string(statusCode) + "\r\n";
+		std::ostringstream responseText;
+		responseText << "HTTP/1.1 " << statusCode << "\r\n";
 		
 		if(headers)
 		{
@@ -444,22 +519,20 @@ namespace stw
 			{
 				for(const auto &[key,value] : *headers)
 				{
-					responseText += key + ": " + value + "\r\n";
+					responseText << key << ": " << value << "\r\n";
 				}
 			}
 		}
 
 		if(content != nullptr && contentType.size() > 0)
 		{
-			responseText += "Content-Length: " + std::to_string(content->get_length()) + "\r\n";
-			responseText += "Content-Type: " + contentType + "\r\n";
+			responseText << "Content-Length: " << content->get_length() << "\r\n";
+			responseText << "Content-Type: " << contentType << "\r\n";
 		}
 
-		responseText += "Connection: close\r\n";
+		responseText << "Connection: close\r\n\r\n";
 
-		responseText += "\r\n";
-
-		if(write_all(responseText.data(), responseText.size()))
+		if(write_all(responseText.str().data(), responseText.str().size()))
 		{
 			if(content != nullptr && content->get_length() > 0)
 			{
@@ -479,7 +552,8 @@ namespace stw
 
 	bool http_connection::write_response(uint32_t statusCode, const http_headers *headers, const void *content, uint64_t contentLength, const std::string &contentType)
 	{
-		std::string responseText = "HTTP/1.1 " + std::to_string(statusCode) + "\r\n";
+		std::ostringstream responseText;
+		responseText << "HTTP/1.1 " << statusCode << "\r\n";
 
 		if(headers)
 		{
@@ -487,22 +561,20 @@ namespace stw
 			{
 				for(const auto &[key,value] : *headers)
 				{
-					responseText += key + ": " + value + "\r\n";
+					responseText << key << ": " << value << "\r\n";
 				}
 			}
 		}
 
 		if(content != nullptr && contentLength > 0 && contentType.size() > 0)
 		{
-			responseText += "Content-Length: " + std::to_string(contentLength) + "\r\n";
-			responseText += "Content-Type: " + contentType + "\r\n";
+			responseText << "Content-Length: " << contentLength << "\r\n";
+			responseText << "Content-Type: " << contentType << "\r\n";
 		}
 
-		responseText += "Connection: close\r\n";
+		responseText << "Connection: close\r\n\r\n";
 
-		responseText += "\r\n";
-
-		if(write_all(responseText.data(), responseText.size()))
+		if(write_all(responseText.str().data(), responseText.str().size()))
 		{
 			if(content != nullptr && contentLength > 0)
 				return write_all(content, contentLength);

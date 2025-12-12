@@ -4,18 +4,8 @@ namespace stw
 {
 	thread_pool::thread_pool()
 	{
-		auto numThreads = std::thread::hardware_concurrency();
+		size_t numThreads = std::thread::hardware_concurrency();
 
-		for (size_t i = 0; i < numThreads; ++i) 
-		{
-			workers.push_back(std::thread(&thread_pool::worker_thread, this));
-		}
-
-		activeThreads = 0;
-	}
-
-	thread_pool::thread_pool(size_t numThreads)
-	{
 		for (size_t i = 0; i < numThreads; ++i) 
 		{
 			workers.push_back(std::thread(&thread_pool::worker_thread, this));

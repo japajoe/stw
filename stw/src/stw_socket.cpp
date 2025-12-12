@@ -375,28 +375,29 @@ namespace stw
         if(target->s.fd >= 0) 
             return false;
 
-        struct sockaddr addr;
-        std::memset(&addr, 0, sizeof(addr));
-        uint32_t size = sizeof(addr);
-        uint32_t addrLen = sizeof(addr);
+        struct sockaddr_storage address;
+        std::memset(&address, 0, sizeof(address));
+        uint32_t addressLength = sizeof(sockaddr_storage);
         
     #ifdef _WIN32
-        target->s.fd = ::accept(s.fd,  &addr, (int32_t*)&size);
+        target->s.fd = ::accept(s.fd,  (struct sockaddr*)&address, (int32_t*)&addressLength);
     #else
-        target->s.fd = ::accept(s.fd,  &addr, &size);
+        target->s.fd = ::accept(s.fd,  (struct sockaddr*)&address, &addressLength);
     #endif
         
         if(target->s.fd < 0)
             return false;
-        
-        if(size == sizeof(sockaddr_in_t)) 
+
+        if(address.ss_family == AF_INET) 
         {
-            std::memcpy(&target->s.address.ipv4, &addr, size);
+            sockaddr_in_t *pAddress = (sockaddr_in_t*)&address;
+            std::memcpy(&target->s.address.ipv4, pAddress, sizeof(sockaddr_in_t));
             target->s.addressFamily = address_family_af_inet;
         } 
-        else if(size == sizeof(sockaddr_in6_t)) 
+        else if(address.ss_family == AF_INET6) 
         {
-            std::memcpy(&target->s.address.ipv6, &addr, size);
+            sockaddr_in6_t *pAddress = (sockaddr_in6_t*)&address;
+            std::memcpy(&target->s.address.ipv6, pAddress, sizeof(sockaddr_in6_t));
             target->s.addressFamily = address_family_af_inet6;
         } 
         else 

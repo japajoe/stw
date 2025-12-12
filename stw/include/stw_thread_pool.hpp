@@ -17,7 +17,6 @@ namespace stw
 	{
 	public:
 		thread_pool();
-	    thread_pool(size_t numThreads);
     	~thread_pool();
 		void enqueue(std::function<void()> task);
 		bool is_available() const;
