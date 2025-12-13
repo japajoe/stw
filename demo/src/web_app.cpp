@@ -11,11 +11,16 @@ web_app::web_app()
 		{
 			//std::cout << "Broken pipe\n";
 		}
+		if(n == SIGTERM)
+		{
+			server.stop();
+		}
 	#endif
 	});
 	
 	stw::signal::register_signal(SIGINT);
 #ifndef _WIN32
+	stw::signal::register_signal(SIGTERM);
 	stw::signal::register_signal(SIGPIPE);
 #endif
 }
@@ -27,7 +32,7 @@ void web_app::run()
 
 	router.add(stw::http_method_get, "/", [&] (stw::http_connection *c, const stw::http_request_info &r) {
 		std::string filePath = config.publicHtmlPath + "/index.html";
-		send_file_content(c, filePath);
+		send_file_content(c, stw::http_status_code_ok, filePath);
 	});
 
 	server.onRequest = [this] (stw::http_connection *c, const stw::http_request_info &r) {
@@ -56,13 +61,13 @@ void web_app::on_request(stw::http_connection *connection, const stw::http_reque
 
 		// Checks if the file exists, and if it's inside the public html directory or any of its children
 		if(stw::file::is_within_directory(path, config.publicHtmlPath))
-			send_file_content(connection, path);
+			send_file_content(connection, stw::http_status_code_ok, path);
 		else
-			send_file_content(connection, config.privateHtmlPath + "/404.html");
+			send_file_content(connection, stw::http_status_code_not_found, config.privateHtmlPath + "/404.html");
 	}
 }
 
-void web_app::send_file_content(stw::http_connection *connection, const std::string &filePath)
+void web_app::send_file_content(stw::http_connection *connection, uint32_t statusCode, const std::string &filePath)
 {
 	constexpr size_t MAX_FILE_SIZE = 1024 * 1024;
 	size_t fileSize = stw::file::get_size(filePath);
@@ -80,7 +85,7 @@ void web_app::send_file_content(stw::http_connection *connection, const std::str
 
 		if(fileCache.read_file(filePath, &data, &size))
 		{
-			connection->write_response(stw::http_status_code_ok, &headers, data, size, contentType);
+			connection->write_response(statusCode, &headers, data, size, contentType);
 			return;
 		}
 	}
@@ -89,7 +94,7 @@ void web_app::send_file_content(stw::http_connection *connection, const std::str
 		if(fileSize > 0)
 		{
 			stw::file_stream stream(filePath, stw::file_access_read);
-			connection->write_response(stw::http_status_code_ok, &headers, &stream, contentType);
+			connection->write_response(statusCode, &headers, &stream, contentType);
 			return;
 		}
 	}

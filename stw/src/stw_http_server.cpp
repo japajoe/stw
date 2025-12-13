@@ -52,12 +52,16 @@ namespace stw
 			listeners.emplace_back();
 		}
 
-		auto task1 = std::async(std::launch::async, &http_server::accept_http, this);
+		auto httpTask = std::async(std::launch::async, &http_server::accept_http, this);
+		(void)httpTask;
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
 		if(config.useHttps)
-			auto task2 = std::async(std::launch::async, &http_server::accept_https, this);
+		{
+			auto httpsTask = std::async(std::launch::async, &http_server::accept_https, this);
+			(void)httpsTask;
+		}
 	}
 
 	void http_server::stop()
@@ -224,9 +228,8 @@ namespace stw
             return http_header_error_failed_to_read;
 
         const size_t maxHeaderSize = config.maxHeaderSize;
-        const size_t bufferSize = maxHeaderSize;
-        std::vector<char> buffer;
-        buffer.resize(bufferSize);
+		const size_t bufferSize = 4096;
+		char buffer[bufferSize];
         int64_t headerEnd = 0;
         int64_t totalHeaderSize = 0;
         bool endFound = false;
@@ -240,7 +243,8 @@ namespace stw
             return -1; // Not found
         };
 
-        char *pBuffer = buffer.data();
+        //char *pBuffer = buffer.data();
+		char *pBuffer = buffer;
 
         // Peek to find the end of the header
         while (true) 
