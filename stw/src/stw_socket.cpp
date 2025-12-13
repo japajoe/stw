@@ -195,27 +195,11 @@ namespace stw
         }
     }
 
-	socket::socket(const socket &other)
-	{
-		s = other.s;
-		protocolType = other.protocolType;
-	}
-
 	socket::socket(socket &&other) noexcept
 	{
 		std::memcpy(&s, &other.s, sizeof(socket_t));
 		other.s.fd = -1;
 		protocolType = other.protocolType;
-	}
-
-	socket &socket::operator=(const socket &other)
-	{
-		if(this != &other)
-		{
-			s = other.s;
-			protocolType = other.protocolType;
-		}
-		return *this;
 	}
 
 	socket &socket::operator=(socket &&other) noexcept

@@ -480,23 +480,9 @@ namespace stw
 		destroy();
 	}
 
-	ssl_context::ssl_context(const ssl_context &other)
-	{
-		pContext = other.pContext;
-	}
-
 	ssl_context::ssl_context(ssl_context &&other) noexcept
 	{
 		pContext = std::exchange(other.pContext, nullptr);
-	}
-
-	ssl_context ssl_context::operator=(const ssl_context &other)
-	{
-		if(this != &other)
-		{
-			pContext = other.pContext;
-		}
-		return *this;
 	}
 
 	ssl_context &ssl_context::operator=(ssl_context &&other) noexcept
@@ -584,23 +570,9 @@ namespace stw
 		destroy();
 	}
 
-	ssl::ssl(const ssl &other)
-	{
-		pSsl = other.pSsl;
-	}
-
 	ssl::ssl(ssl &&other) noexcept
 	{
 		pSsl = std::exchange(other.pSsl, nullptr);
-	}
-
-	ssl ssl::operator=(const ssl &other)
-	{
-		if(this != &other)
-		{
-			pSsl = other.pSsl;
-		}
-		return *this;
 	}
 
 	ssl &ssl::operator=(ssl &&other) noexcept

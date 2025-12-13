@@ -18,9 +18,9 @@ namespace stw
 	public:
 		http_connection(socket &connection);
 		http_connection(socket &connection, ssl &s);
-		http_connection(const http_connection &other);
+		http_connection(const http_connection &other) = delete;
 		http_connection(http_connection &&other) noexcept;
-		http_connection &operator=(const http_connection &other);
+		http_connection &operator=(const http_connection &other) = delete;
 		http_connection &operator=(http_connection &&other) noexcept;
 		int64_t read(void *buffer, size_t size);
 		int64_t write(const void *buffer, size_t size);

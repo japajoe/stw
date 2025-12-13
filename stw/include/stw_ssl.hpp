@@ -15,9 +15,9 @@ namespace stw
 	public:
 		ssl_context();
 		~ssl_context();
-		ssl_context(const ssl_context &other);
+		ssl_context(const ssl_context &other) = delete;
 		ssl_context(ssl_context &&other) noexcept;
-		ssl_context operator=(const ssl_context &other);
+		ssl_context operator=(const ssl_context &other) = delete;
 		ssl_context &operator=(ssl_context &&other) noexcept;
 		bool create(const std::string &certificateFilePath, const std::string &privateKeyFilePath);
 		bool create();
@@ -33,9 +33,9 @@ namespace stw
 	public:
 		ssl();
 		~ssl();
-		ssl(const ssl &other);
+		ssl(const ssl &other) = delete;
 		ssl(ssl &&other) noexcept;
-		ssl operator=(const ssl &other);
+		ssl operator=(const ssl &other) = delete;
 		ssl &operator=(ssl &&other) noexcept;
 		bool create(ssl_context *context);
 		void destroy();

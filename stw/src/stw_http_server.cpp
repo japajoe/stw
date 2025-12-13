@@ -97,6 +97,12 @@ namespace stw
 						on_request(c);
 					});
 				}
+				else
+				{
+					http_connection con(client);
+					con.write_response(http_status_code_service_unavailable);
+					con.close();
+				}
 			}
 		}
 
@@ -150,6 +156,12 @@ namespace stw
 					threadPool.enqueue([this, c = connection] () {
 						on_request(c);
 					});
+				}
+				else
+				{
+					http_connection con(client, s);
+					con.write_response(http_status_code_service_unavailable);
+					con.close();
 				}
 			}
 		}
@@ -435,26 +447,10 @@ namespace stw
 		this->s = std::move(s);
 	}
 
-	http_connection::http_connection(const http_connection &other)
-	{
-		connection = other.connection;
-		s = other.s;
-	}
-
 	http_connection::http_connection(http_connection &&other) noexcept
 	{
 		connection = std::move(other.connection);
 		s = std::move(other.s);
-	}
-
-	http_connection &http_connection::operator=(const http_connection &other)
-	{
-		if(this != &other)
-		{
-			connection = other.connection;
-			s = other.s;
-		}
-		return *this;
 	}
 
 	http_connection &http_connection::operator=(http_connection &&other) noexcept

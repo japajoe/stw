@@ -67,9 +67,9 @@ namespace stw
 		socket();
 		socket(socket_protocol_type protocolType);
 		socket(socket_protocol_type protocolType, const std::string &ip, uint16_t port);
-		socket(const socket &other);
+		socket(const socket &other) = delete;
 		socket(socket &&other) noexcept;
-		socket &operator=(const socket &other);
+		socket &operator=(const socket &other) = delete;
 		socket &operator=(socket &&other) noexcept;
 		~socket();
 		bool connect(const std::string &ip, uint16_t port);
