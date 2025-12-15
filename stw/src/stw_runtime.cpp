@@ -1,19 +1,20 @@
 #include "stw_runtime.hpp"
+#include "stw_platform.hpp"
+
+#if defined(STW_PLATFORM_WINDOWS)
+	#include <windows.h>
+#endif
+
+#if defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
+	#include <dlfcn.h>
+	#include <unistd.h>
+	#include <limits.h>
+#endif
+
 #include <filesystem>
 #include <iostream>
 #include <cstring>
 #include <stdexcept>
-
-#if defined(_WIN32)
-#define STW_PLATFORM_WINDOWS
-#include <windows.h>
-#endif
-#if defined(__linux__) || defined(__FreeBSD__)
-#define STW_PLATFORM_LINUX
-#include <dlfcn.h>
-#include <unistd.h>
-#include <limits.h>
-#endif
 
 namespace stw::runtime
 {
@@ -27,13 +28,11 @@ namespace stw::runtime
 
 		void *moduleHandle = nullptr;
 
-	#ifdef STW_PLATFORM_WINDOWS
+	#if defined(STW_PLATFORM_WINDOWS)
 		moduleHandle = (void*)LoadLibrary(filePath.c_str());
 		if(!moduleHandle)
 			std::cerr << "Failed to load plugin: " << filePath << '\n';
-	#endif
-		
-	#ifdef STW_PLATFORM_LINUX
+	#elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
 		moduleHandle = dlopen(filePath.c_str(), RTLD_LAZY);
 		if(!moduleHandle) 
 		{
@@ -47,14 +46,12 @@ namespace stw::runtime
 
 	void unload_library(void *libraryHandle)
 	{
-	#ifdef STW_PLATFORM_WINDOWS
-		if(libraryHandle)
-			FreeLibrary((HINSTANCE)libraryHandle);
-	#endif
-
-	#ifdef STW_PLATFORM_LINUX
-		if(libraryHandle)
-			dlclose(libraryHandle);
+		if(!libraryHandle)
+			return;
+	#if defined(STW_PLATFORM_WINDOWS)
+		FreeLibrary((HINSTANCE)libraryHandle);
+	#elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
+		dlclose(libraryHandle);
 	#endif
 	}
 
@@ -65,13 +62,11 @@ namespace stw::runtime
 
 		void *s = nullptr;
 
-	#ifdef STW_PLATFORM_WINDOWS
+	#if defined(STW_PLATFORM_WINDOWS)
 		s = (void*)GetProcAddress((HINSTANCE)libraryHandle, symbolName.c_str());
 		if(s == nullptr)
 			std::cerr << "Error: undefined symbol: " << symbolName << '\n';
-	#endif
-
-	#ifdef STW_PLATFORM_LINUX
+	#elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
 		dlerror(); /* clear error code */
 		s = dlsym(libraryHandle, symbolName.c_str());
 		char *error = dlerror();
@@ -85,8 +80,8 @@ namespace stw::runtime
 
 	bool find_library_path(const std::string &libraryName, std::string &libraryPath)
 	{
+	#if defined(STW_PLATFORM_WINDOWS)
 		static char result[4096]; // Static buffer to hold result
-	#ifdef STW_PLATFORM_WINDOWS
 		DWORD res = SearchPath(nullptr, libraryName.c_str(), nullptr, MAX_PATH, result, nullptr);
 		if (res == 0) 
 			return false;
@@ -97,9 +92,7 @@ namespace stw::runtime
 		libraryPath = std::string(outputPath);
 		delete[] outputPath;
 		return true;
-	#endif
-
-	#ifdef STW_PLATFORM_LINUX
+	#elif defined(STW_PLATFORM_LINUX)
 		// Prepare the command to search the library
 		char cmd[256];
 		snprintf(cmd, sizeof(cmd), "ldconfig -p 2>/dev/null | grep %s", libraryName.c_str());
@@ -111,6 +104,8 @@ namespace stw::runtime
 			std::cerr << "popen() failed\n";
 			return false;
 		}
+		
+		static char result[4096]; // Static buffer to hold result
 
 		while (fgets(result, sizeof(result), pipe) != NULL) 
 		{
@@ -139,17 +134,19 @@ namespace stw::runtime
 		
 		pclose(pipe);
 		return false;
+	#elif defined(STW_PLATFORM_MAC)
+		return false;
+	#else
+		return false;
 	#endif
 	}
 
 	void set_current_working_directory(const std::string &directoryPath)
 	{
-	#ifdef STW_PLATFORM_WINDOWS
+	#if defined(STW_PLATFORM_WINDOWS)
 		if(!SetCurrentDirectory(directoryPath.c_str()))
 			throw std::runtime_error("Failed to change directory: " + directoryPath);
-	#endif
-
-	#ifdef STW_PLATFORM_LINUX
+	#elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
 		if(chdir(directoryPath.c_str()) != 0)
 			throw std::runtime_error("Failed to change directory: " + directoryPath);
 	#endif
@@ -159,18 +156,12 @@ namespace stw::runtime
 	{
 		constexpr size_t PATH_MAX_LENGTH = 4096;
         char buffer[PATH_MAX_LENGTH] = {0};
-	#ifdef STW_PLATFORM_WINDOWS
+	#if defined(STW_PLATFORM_WINDOWS)
         if (!GetCurrentDirectory(PATH_MAX_LENGTH, buffer)) 
-		{
             throw std::runtime_error("Failed to get current directory");
-        }
-	#endif
-
-	#ifdef STW_PLATFORM_LINUX
+	#elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
         if (getcwd(buffer, sizeof(buffer)) == nullptr) 
-		{
             throw std::runtime_error("Failed to get current directory");
-        }
 	#endif
         return std::string(buffer);
 	}

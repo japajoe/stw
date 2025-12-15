@@ -1,26 +1,28 @@
 #ifndef STW_SOCKET_HPP
 #define STW_SOCKET_HPP
 
-#ifdef _WIN32
-#ifdef _WIN32_WINNT
-#undef _WIN32_WINNT
-#endif
-#define _WIN32_WINNT 0x0600
+#include "stw_platform.hpp"
+
+#if defined(STW_PLATFORM_WINDOWS)
+	#ifdef _WIN32_WINNT
+	#undef _WIN32_WINNT
+	#endif
+	#define _WIN32_WINNT 0x0600
+	#include <winsock2.h>
+	#include <ws2tcpip.h>
 #endif
 
-#ifdef _WIN32
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#else
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <netdb.h>
-#include <fcntl.h>
+#if defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
+	#include <sys/socket.h>
+	#include <sys/types.h>
+	#include <netinet/in.h>
+	#include <netinet/tcp.h>
+	#include <arpa/inet.h>
+	#include <unistd.h>
+	#include <netdb.h>
+	#include <fcntl.h>
 #endif
+
 #include <cstdint>
 #include <string>
 

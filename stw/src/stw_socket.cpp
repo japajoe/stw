@@ -109,7 +109,7 @@ namespace stw
 
     static void load_winsock()
     {
-    #ifdef _WIN32
+    #if defined(STW_PLATFORM_WINDOWS)
 		if(gSocketCount.load() == 0)
 		{
             WSADATA wsaData;
@@ -125,7 +125,7 @@ namespace stw
 
     static void unload_winsock()
     {
-    #ifdef _WIN32
+    #if defined(STW_PLATFORM_WINDOWS)
 		if(gSocketCount.load() == 1)
 		{
 			WSACleanup();
@@ -330,7 +330,7 @@ namespace stw
         return result == 0;
 	}
 
-#ifdef _WIN32
+#if defined(STW_PLATFORM_WINDOWS)
     const char* get_error_message(int errorCode) {
         switch (errorCode) {
             case WSAEWOULDBLOCK:
@@ -363,10 +363,12 @@ namespace stw
         std::memset(&address, 0, sizeof(address));
         uint32_t addressLength = sizeof(sockaddr_storage);
         
-    #ifdef _WIN32
+    #if defined(STW_PLATFORM_WINDOWS)
         target->s.fd = ::accept(s.fd,  (struct sockaddr*)&address, (int32_t*)&addressLength);
-    #else
+    #elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
         target->s.fd = ::accept(s.fd,  (struct sockaddr*)&address, &addressLength);
+    #elif
+        return false;
     #endif
         
         if(target->s.fd < 0)
@@ -410,11 +412,11 @@ namespace stw
             };
 
 
-        #ifdef _WIN32
+        #if defined(STW_PLATFORM_WINDOWS)
             ::shutdown(s.fd, SD_SEND);
             emptyBuffers();
             closesocket(s.fd);
-        #else
+        #elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
             ::shutdown(s.fd, SHUT_WR);
             emptyBuffers();
             ::close(s.fd);
@@ -426,9 +428,9 @@ namespace stw
 	int64_t socket::read(void *buffer, size_t size)
 	{
 		int64_t n = 0;
-	#ifdef _WIN32
+	#if defined(STW_PLATFORM_WINDOWS)
 		n = ::recv(s.fd, (char*)buffer, size, 0);
-	#else
+	#elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
 		n = ::recv(s.fd, buffer, size, 0);
 	#endif
 		return n;
@@ -437,9 +439,9 @@ namespace stw
 	int64_t socket::peek(void *buffer, size_t size)
 	{
 		int64_t n = 0;
-	#ifdef _WIN32
+	#if defined(STW_PLATFORM_WINDOWS)
 		n = ::recv(s.fd, (char*)buffer, size, MSG_PEEK);
-	#else
+	#elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
 		n = ::recv(s.fd, buffer, size, MSG_PEEK);
 	#endif
 		return n;
@@ -448,9 +450,9 @@ namespace stw
 	int64_t socket::write(const void *buffer, size_t size)
 	{
 		int64_t n = 0;
-	#ifdef _WIN32
+	#if defined(STW_PLATFORM_WINDOWS)
 		n = ::send(s.fd, (char*)buffer, size, 0);
-	#else
+	#elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
 		n = ::send(s.fd, buffer, size, 0);
 	#endif
 		return n;
@@ -510,34 +512,38 @@ namespace stw
 
 	bool socket::set_option(int32_t level, int32_t option, const void *value, uint32_t valueSize)
 	{
-    #ifdef _WIN32
+    #if defined(STW_PLATFORM_WINDOWS)
         return setsockopt(s.fd, level, option, (char*)value, valueSize) != 0 ? false : true;
-    #else
+    #elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
         return setsockopt(s.fd, level, option, value, valueSize) != 0 ? false : true;
+    #else
+        return false;
     #endif
 	}
 
     bool socket::set_timeout(uint32_t seconds)
     {
-    #ifdef _WIN32
+    #if defined(STW_PLATFORM_WINDOWS)
         DWORD timeout = seconds * 1000; // Convert to milliseconds
         return setsockopt(s.fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) != 0 ? false : true;
-    #else
+    #elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
         struct timeval timeout;
         timeout.tv_sec = seconds;
         timeout.tv_usec = 0;
         return setsockopt(s.fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) != 0 ? false : true;
+    #else
+        return false;
     #endif
     }
 
     bool socket::set_blocking(bool block)
     {
-    #ifdef _WIN32
+    #if defined(STW_PLATFORM_WINDOWS)
         u_long mode = block ? 0 : 1; // 1 to enable non-blocking socket
         if (ioctlsocket(s.fd, FIONBIO, &mode) != 0)
             return false;
         return true;
-    #else
+    #elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
         int flags = fcntl(s.fd, F_GETFL, 0);
         if (flags == -1) return -1; // Error handling
 
@@ -547,6 +553,8 @@ namespace stw
             flags |= O_NONBLOCK;     // Set the non-blocking flag
 
         return fcntl(s.fd, F_SETFL, flags) >= 0;
+    #else
+        return false;
     #endif
     }
 
