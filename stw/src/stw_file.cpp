@@ -2,6 +2,7 @@
 #include "stw_date_time.hpp"
 #include <filesystem>
 #include <fstream>
+#include <sstream>
 #include <algorithm>
 
 namespace fs = std::filesystem;
