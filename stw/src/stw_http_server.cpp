@@ -187,7 +187,7 @@ namespace stw
 		std::string path;
 		uint64_t contentLength;
 
-		if(!parse_request_header2(headerText, headers, method, path, contentLength))
+		if(!parse_request_header(headerText, headers, method, path, contentLength))
 		{
 			connection->write_response(http_status_code_bad_request);
 			connection->close();
@@ -241,128 +241,54 @@ namespace stw
 
         const size_t maxHeaderSize = config.maxHeaderSize;
 		const size_t bufferSize = 4096;
-		char buffer[bufferSize];
-        int64_t headerEnd = 0;
-        int64_t totalHeaderSize = 0;
-        bool endFound = false;
+		char buffer[bufferSize] = {0};
+		int64_t bytesReceived;
+		int headerSize = 0;
+		
+		while (true) 
+		{
+			// Peek the data from the socket (don't consume yet)
+			bytesReceived = connection->peek(buffer, bufferSize);
 
-        auto findHeaderEnd = [] (const char* haystack, const char* needle, size_t haystackLength, size_t needleLength) -> int64_t {
-            for (size_t i = 0; i <= haystackLength - needleLength; ++i) 
+			if (bytesReceived <= 0) 
+				return http_header_error_failed_to_peek;
+
+			header.append(buffer, bytesReceived);
+			headerSize += bytesReceived;
+
+			std::string temp(buffer, bytesReceived);
+			size_t endPos = temp.find("\r\n\r\n");
+
+			if (endPos != std::string::npos) 
 			{
-                if (std::memcmp(haystack + i, needle, needleLength) == 0)
-                    return static_cast<int>(i); // Found the needle, return the index
-            }
-            return -1; // Not found
-        };
+				size_t bytesToConsume = endPos + 4;  // '\r\n\r\n' is 4 bytes long
 
-        //char *pBuffer = buffer.data();
-		char *pBuffer = buffer;
+				if(connection->read(buffer, bytesToConsume) <= 0)
+					return http_header_error_failed_to_read;
 
-        // Peek to find the end of the header
-        while (true) 
-        {
-            int64_t bytesPeeked = connection->peek(pBuffer, bufferSize);
+				// Get rid of the \r\n\r\n
+				header = header.substr(0, header.find("\r\n\r\n") + 4);
 
-            if (bytesPeeked < 0)
-                return http_header_error_failed_to_peek;
+				// End is found, but the header size exceeds the maximum size
+				if(header.size() > maxHeaderSize)
+					return http_header_error_max_size_exceeded;
 
-            //Don't loop indefinitely...
-            if(bytesPeeked == 0)
-                break;
+				return http_header_error_none;
+			}
 
-            totalHeaderSize += bytesPeeked;
+			// End not found yet, but it's already clear that the header size exceeds the maximum size
+			if(headerSize > maxHeaderSize)
+				return http_header_error_max_size_exceeded;
 
-            if(totalHeaderSize > maxHeaderSize) 
-            {
-                printf("header_error_max_size_exceeded [1], %zu/%zu\n", totalHeaderSize, maxHeaderSize);
-                return http_header_error_max_size_exceeded;
-            }
-            
-            // Look for the end of the header (double CRLF)
-            int64_t end = findHeaderEnd(pBuffer, "\r\n\r\n", bytesPeeked, 4);
+			// End of header not found yet, need to consume this data andd move on
+			if(connection->read(buffer, bytesReceived) <= 0)
+				return http_header_error_failed_to_read;
+		}
 
-            if(end >= 0)
-            {
-                headerEnd = end + 4; //Include the length of the CRLF
-                endFound = true;
-                break;                
-            }
-        }
-
-        if(!endFound)
-            return http_header_error_end_not_found;
-
-        // Now read the header
-        header.resize(headerEnd);
-        int64_t bytesRead = connection->read_all(header.data(), headerEnd);
-        if (bytesRead <= 0) 
-            return http_header_error_failed_to_read;
-
-        if(header.size() > maxHeaderSize) 
-        {
-            printf("header_error_max_size_exceeded [2], %zu/%zu\n", header.size(), maxHeaderSize);
-            return http_header_error_max_size_exceeded;
-        }
-
-        return http_header_error_none;
+		return http_header_error_end_not_found;
     }
 
 	bool http_server::parse_request_header(const std::string &responseText, http_headers &header, std::string &method, std::string &path, uint64_t &contentLength)
-    {
-		contentLength = 0;
-
-        std::istringstream responseStream(responseText);
-        std::string line;
-        size_t currentLine = 0;
-
-        while(std::getline(responseStream, line))
-        {
-            line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
-
-            if(line.size() == 0)
-                continue;
-
-            if(currentLine == 0)
-            {
-                if(line[line.size() - 1] == ' ')
-                    line.pop_back();
-
-                auto parts = string::split(line, ' ', 0);
-                
-                if(parts.size() < 2)
-                    return false;
-
-                method = string::to_lower(parts[0]);
-                path = parts[1];
-
-				if(path.size() == 0)
-					path = "/";
-            }
-            else
-            {
-                auto parts = string::split(line, ':', 2);
-
-                if(parts.size() == 2)
-                {
-                    parts[0] = string::to_lower(parts[0]);
-                    parts[1] = string::trim_start(parts[1]);
-                    header[parts[0]] = parts[1];
-                }
-            }
-
-            currentLine++;
-        }
-
-        if(header.contains("content-length"))
-        {
-            if(!string::try_parse_uint64(header["content-length"], contentLength))
-                contentLength = 0;
-        }
-
-        return currentLine > 0;
-    }
-
-	bool http_server::parse_request_header2(const std::string &responseText, http_headers &header, std::string &method, std::string &path, uint64_t &contentLength)
 	{
 		size_t pos = 0;
 		size_t end;
@@ -427,7 +353,7 @@ namespace stw
 					} 
 					catch (const std::out_of_range&) 
 					{
-						contentLength = UINT64_MAX; // Handle out of range
+						contentLength = 0; // Handle out of range
 					}
 				}
 			}

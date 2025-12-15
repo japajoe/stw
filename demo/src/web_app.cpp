@@ -35,6 +35,19 @@ void web_app::run()
 		send_file_content(c, stw::http_status_code_ok, filePath);
 	});
 
+	router.add(stw::http_method_post, "/api/v1/test", [&] (stw::http_connection *c, const stw::http_request_info &r) {
+		if(r.contentLength > 0)
+		{
+			std::string requestText;
+			requestText.resize(r.contentLength);
+			if(c->read_all(requestText.data(), r.contentLength))
+			{
+				std::cout << requestText << '\n';
+			}
+		}
+		c->write_response(200);
+	});
+
 	server.onRequest = [this] (stw::http_connection *c, const stw::http_request_info &r) {
 		on_request(c, r);
 	};

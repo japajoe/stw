@@ -2,8 +2,8 @@
 Small library for making web based applications.
 
 # Features
-- HTTP client.
 - HTTP server.
+- HTTP client.
 - Web socket implementation for client and server.
 
 # Requirements for Linux

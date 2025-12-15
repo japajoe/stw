@@ -1,4 +1,5 @@
 #include "stw_socket.hpp"
+#include "stw_string.hpp"
 #include <cstring>
 #include <sstream>
 #include <atomic>
@@ -43,40 +44,6 @@ namespace stw
         }
         return false;
     }
-
-    static bool string_contains(const std::string &haystack, const std::string &needle) 
-	{
-        return haystack.find(needle) != std::string::npos;
-    }
-
-	static std::vector<std::string> string_split(const std::string& str, char separator, size_t maxParts = 0) 
-    {
-        std::vector<std::string> result;
-        size_t start = 0;
-        size_t end = 0;
-
-        while ((end = str.find(separator, start)) != std::string::npos) 
-        {
-            result.push_back(str.substr(start, end - start));
-            start = end + 1;
-
-            if (maxParts > 0 && result.size() >= maxParts - 1) 
-                break; // Stop if we have reached maximum parts
-        }
-        result.push_back(str.substr(start)); // Add the last part
-        return result;
-    }
-
-	static bool try_parse_uint16(const std::string &value, uint16_t &v)
-	{
-        std::stringstream ss(value);
-        ss >> v;
-
-        if (ss.fail() || !ss.eof())
-            return false;
-        
-        return true;
-	}
 
     static ip_version detect_ip_version(const std::string &ip)
     {
@@ -597,6 +564,7 @@ namespace stw
         }
     }
 
+    // ToDo: Handle IPv6 in a better way
 	bool socket::resolve(const std::string &uri, std::string &ip, uint16_t &port, std::string &hostname, bool forceIPv4)
 	{
 		std::string scheme, host, path;
@@ -620,9 +588,9 @@ namespace stw
             return false;
         }        
 
-        if(string_contains(host, ":")) 
+        if(string::contains(host, ":")) 
 		{
-            auto parts = string_split(host, ':');
+            auto parts = string::split(host, ':');
 
             if(parts.size() != 2)
                 return false;
@@ -630,9 +598,8 @@ namespace stw
             //Get rid of the :port part in the host
             host = parts[0];
 
-            if(!try_parse_uint16(parts[1], port))
+            if(!string::try_parse_uint16(parts[1], port))
                 return false;
-            
         } 
 		else 
 		{
