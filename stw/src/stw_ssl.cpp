@@ -1,5 +1,6 @@
 #include "stw_ssl.hpp"
 #include "stw_runtime.hpp"
+#include "stw_platform.hpp"
 #include <stdexcept>
 #include <utility>
 #include <cstring>
@@ -454,12 +455,16 @@ namespace stw
 	
 		std::string sslPath;
 		std::string cryptoPath;
-	#ifdef _WIN32
+	#if defined(STW_PLATFORM_WINDOWS)
 		sslPath = "libssl-3-x64.dll";
 		cryptoPath = "libcrypto-3-x64.dll";
-	#else
+	#elif defined(STW_PLATFORM_LINUX)
 		stw::runtime::find_library_path("libssl.so", sslPath);
+	#elif defined(STW_PLATFORM_MAC)
+		//Not implemented yet
+		return false;
 	#endif
+	
 		if(sslPath.size() > 0)
 		{
 			if(openssl::load_library(sslPath, cryptoPath))

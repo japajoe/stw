@@ -1,12 +1,12 @@
 #include "stw_http_client.hpp"
 #include "stw_runtime.hpp"
+#include "stw_platform.hpp"
 #include "stw_string.hpp"
 #include <vector>
 #include <sstream>
 #include <cstring>
 #include <iostream>
 #include <algorithm>
-#include <atomic>
 
 namespace stw
 {
@@ -335,45 +335,43 @@ namespace stw
 		}
 	}
 
-    static std::atomic<int> gHttpClientCount = 0;
-
     static void write_error(const std::string &message) 
 	{
 		std::cerr << message << '\n';
     }
 
+    static bool load_curl()
+    {
+		if(curl::is_loaded())
+			return true;
+	
+		std::string curlPath;
+		
+	#if defined(STW_PLATFORM_WINDOWS)
+		curlPath = "libcurl-x64.dll";
+	#elif defined(STW_PLATFORM_LINUX)
+		stw::runtime::find_library_path("libcurl.so", curlPath);
+	#elif defined(STW_PLATFORM_MAC)
+		//Not implemented yet
+		return false;
+	#endif
+	
+		if(curlPath.size() > 0)
+		{
+            if(curl::load_library(curlPath))
+            {
+                curl::global_init(CURL_GLOBAL_DEFAULT);
+                return true;
+            }
+		}
+
+		return false;
+    }
+
 	http_client::http_client()
 	{
         validateCertificate = true;
-        if(gHttpClientCount.load() == 0)
-        {
-        #ifdef _WIN32
-            std::string curlPath = "libcurl-x64.dll";
-        #else
-            std::string curlPath;            
-			stw::runtime::find_library_path("libcurl.so", curlPath);
-        #endif
-            if(curlPath.size() > 0)
-            {
-                if(curl::load_library(curlPath))
-                {
-                    curl::global_init(CURL_GLOBAL_DEFAULT);
-                }
-            }
-        }
-
-        gHttpClientCount.store(gHttpClientCount.load() + 1);
-	}
-
-	http_client::~http_client()
-	{
-        if(gHttpClientCount.load() == 1)
-        {
-            curl::global_cleanup();
-            curl::close_library();
-        }
-        
-        gHttpClientCount.store(gHttpClientCount.load() - 1);
+        load_curl();
 	}
 
     void http_client::set_validate_certificate(bool validate)
@@ -388,6 +386,9 @@ namespace stw
 
     bool http_client::get(const http_request &req, http_response &res)
     {
+        if(!curl::is_loaded())
+            return false;
+
         CURL *gCurl = curl::easy_init();
         if (!gCurl) 
             return false;
@@ -451,6 +452,9 @@ namespace stw
 
     bool http_client::post(const http_request &req, http_response &res)
     {
+        if(!curl::is_loaded())
+            return false;
+
         CURL *gCurl = curl::easy_init();
         
         if (!gCurl) 

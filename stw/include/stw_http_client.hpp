@@ -14,7 +14,6 @@ namespace stw
 	public:
         http_response_callback onResponse;
 		http_client();
-		~http_client();
 		bool get(const http_request &req, http_response &res);
         bool post(const http_request &req, http_response &res);
         void set_validate_certificate(bool validate);
