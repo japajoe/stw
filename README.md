@@ -18,5 +18,10 @@ Small library for making web based applications.
 
 No linking is required with any libraries, but on Linux you must have these libraries somewhere in your system path. On Windows you must place the dll files in the same directory as the executable. MacOS is not fully supported (yet).
 
+# Generating certificate with openssl
+```
+openssl req -newkey rsa:4096 -x509 -sha256 -days 3650 -nodes -out cert.pem -keyout key.pem
+```
+
 # Disclaimer
 This library is just for educational purposes.

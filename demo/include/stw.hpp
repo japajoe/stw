@@ -11,6 +11,7 @@
 #include "../../stw/include/stw_http_router.hpp"
 #include "../../stw/include/stw_http_server.hpp"
 #include "../../stw/include/stw_ini_reader.hpp"
+#include "../../stw/include/stw_platform.hpp"
 #include "../../stw/include/stw_runtime.hpp"
 #include "../../stw/include/stw_signal.hpp"
 #include "../../stw/include/stw_socket.hpp"

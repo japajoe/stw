@@ -6,7 +6,8 @@ web_socket_app::web_socket_app()
 {
 	stw::signal::register_handler([this](int n){on_signal(n);});
 	stw::signal::register_signal(SIGINT);
-#ifndef _WIN32
+	stw::signal::register_signal(SIGTERM);
+#ifndef STW_PLATFORM_WINDOWS
 	stw::signal::register_signal(SIGPIPE);
 #endif
 
@@ -42,6 +43,12 @@ void web_socket_app::run()
 void web_socket_app::on_signal(int n)
 {
 	if(n == SIGINT)
+	{
+		socket.send(stw::web_socket_opcode_close, nullptr, 0, true);
+		socket.close();
+		close(0);
+	}
+	if(n == SIGTERM)
 	{
 		socket.send(stw::web_socket_opcode_close, nullptr, 0, true);
 		socket.close();
