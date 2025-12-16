@@ -175,10 +175,17 @@ namespace stw
 	{
 		std::string headerText;
 
-		if(read_header(connection, headerText) != http_header_error_none)
+		http_header_error error = read_header(connection, headerText);
+
+		if(error != http_header_error_none)
 		{
-			connection->write_response(http_status_code_bad_request);
+			if(error == http_header_error_max_size_exceeded)
+				connection->write_response(http_status_code_request_header_fields_too_large);
+			else
+				connection->write_response(http_status_code_bad_request);
+			
 			connection->close();
+			delete connection;
 			return;
 		}
 
@@ -191,6 +198,7 @@ namespace stw
 		{
 			connection->write_response(http_status_code_bad_request);
 			connection->close();
+			delete connection;
 			return;
 		}
 
@@ -206,6 +214,7 @@ namespace stw
 					responseHeaders["Connection"] = "close";
 					connection->write_response(http_status_code_moved_permanently, &responseHeaders);
 					connection->close();
+					delete connection;
 					return;
 				}
 			}
@@ -228,9 +237,8 @@ namespace stw
 		{
 			connection->write_response(http_status_code_not_found);
 		}
-		
+	
 		connection->close();
-
 		delete connection;
 	}
 
