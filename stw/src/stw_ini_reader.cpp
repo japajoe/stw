@@ -1,129 +1,47 @@
 #include "stw_ini_reader.hpp"
-#include <stdexcept>
-#include <filesystem>
+#include "stw_string.hpp"
+#include "stw_file.hpp"
 #include <vector>
-#include <iostream>
-#include <fstream>
-#include <sstream>
+#include <stdexcept>
 #include <algorithm>
+#include <iostream>
 
 namespace stw
 {
-	static std::vector<std::string> read_all_lines(const std::string &filename) 
-	{
-		std::vector<std::string> lines;
-		std::ifstream file(filename);
-
-		if (!file) 
-		{
-			std::cerr << "Unable to open file: " << filename << std::endl;
-			return lines;
-		}
-
-		std::string line;
-		while (std::getline(file, line)) 
-		{
-			lines.push_back(line);
-		}
-
-		file.close();
-		return lines;
-	}
-
-	static std::vector<std::string> string_split(const std::string &str, char delimiter, size_t limit) 
-	{
-		std::vector<std::string> parts;
-		size_t start = 0;
-		size_t end = str.find(delimiter);
-
-		while (end != std::string::npos && parts.size() < limit - 1) 
-		{
-			parts.push_back(str.substr(start, end - start)); // Extract part
-			start = end + 1; // Update start to the position after the delimiter
-			end = str.find(delimiter, start); // Find the next delimiter
-		}
-
-		// Add the last part (or remaining substring)
-		parts.push_back(str.substr(start));
-
-		return parts;
-	}
-
 	bool ini_reader::field::try_get_uint16(uint16_t &v)
 	{
-        std::stringstream ss(value);
-        ss >> v;
-
-        if (ss.fail() || !ss.eof())
-            return false;
-        
-        return true;
+		return string::try_parse_uint16(value, v);
 	}
 
 	bool ini_reader::field::try_get_int16(int16_t &v)
 	{
-        std::stringstream ss(value);
-        ss >> v;
-
-        if (ss.fail() || !ss.eof())
-            return false;
-        
-        return true;
+		return string::try_parse_int16(value, v);
 	}
 
 	bool ini_reader::field::try_get_uint32(uint32_t &v)
 	{
-        std::stringstream ss(value);
-        ss >> v;
-
-        if (ss.fail() || !ss.eof())
-            return false;
-        
-        return true;
+		return string::try_parse_uint32(value, v);
 	}
 
 	bool ini_reader::field::try_get_int32(int32_t &v)
 	{
-        std::stringstream ss(value);
-        ss >> v;
-
-        if (ss.fail() || !ss.eof())
-            return false;
-        
-        return true;
+		return string::try_parse_int32(value, v);
 	}
 
 	bool ini_reader::field::try_get_uint64(uint64_t &v)
 	{
-        std::stringstream ss(value);
-        ss >> v;
-
-        if (ss.fail() || !ss.eof())
-            return false;
-        
-        return true;
+		return string::try_parse_uint64(value, v);
 	}
 
 	bool ini_reader::field::try_get_int64(int64_t &v)
 	{
-        std::stringstream ss(value);
-        ss >> v;
-
-        if (ss.fail() || !ss.eof())
-            return false;
-        
-        return true;
+		return string::try_parse_int64(value, v);
 	}
 
 	bool ini_reader::field::try_get_boolean(bool &b)
 	{
-        std::string lowercaseValue = value;
+        std::string lowercaseValue = string::to_lower(value);
         
-        for (auto &ch : lowercaseValue) 
-		{
-            ch = std::tolower(ch);
-        }
-
         if (lowercaseValue == "true") 
 		{
             b = true;
@@ -160,10 +78,10 @@ namespace stw
 		if (requiredFields.size() == 0)
 			throw std::runtime_error("No required fields have been set up");
 		
-		if (!std::filesystem::exists(filePath))
+		if (!file::exists(filePath))
 			throw std::runtime_error("The given file path does not exist: " + filePath);
 
-		std::vector<std::string> lines = read_all_lines(filePath);
+		std::vector<std::string> lines = file::read_all_lines(filePath);
 
 		if (lines.size() == 0)
 			throw std::runtime_error("The given file has no content");
@@ -177,7 +95,7 @@ namespace stw
 			if (lines[i].size() == 0)
 				continue;
 
-			auto parts = string_split(lines[i], ' ', 2); // Split on the first space only
+			auto parts = string::split(lines[i], ' ', 2); // Split on the first space only
 
 			if (parts.size() < 2)
 				continue;

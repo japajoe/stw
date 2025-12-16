@@ -42,18 +42,21 @@ namespace stw::file
 	std::string read_all_text(const std::string &filePath)
 	{
 		std::ifstream f(filePath);
-		if (!f.is_open())
+		
+        if (!f.is_open())
 			throw std::runtime_error("Could not open file: " + filePath);
 
 		std::ostringstream contentStream;
 		contentStream << f.rdbuf();
+        f.close();
 		return contentStream.str();
 	}
 
 	std::vector<uint8_t> read_all_bytes(const std::string &filePath)
 	{
 		std::ifstream f(filePath, std::ios::binary);
-		if (!f.is_open()) 
+		
+        if (!f.is_open()) 
 			throw std::runtime_error("Could not open file: " + filePath);
 
 		f.seekg(0, std::ios::end);
@@ -64,8 +67,28 @@ namespace stw::file
 
 		if (!f.read(reinterpret_cast<char*>(buffer.data()), fileSize))
 			throw std::runtime_error("Error reading file: " + filePath);
-
+        
+        f.close();
 		return buffer;
+	}
+
+	std::vector<std::string> read_all_lines(const std::string &filePath)
+	{
+		std::ifstream f(filePath, std::ios::binary);
+		
+        if (!f.is_open()) 
+			throw std::runtime_error("Unable to open file: " + filePath);
+
+		std::vector<std::string> lines;
+		std::string line;
+
+		while (std::getline(f, line)) 
+		{
+			lines.push_back(line);
+		}
+
+		f.close();
+		return lines;
 	}
 
 	size_t get_size(const std::string &filePath)

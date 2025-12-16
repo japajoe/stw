@@ -24,7 +24,7 @@ namespace stw
 		for (auto &worker : workers) 
 		{
 			if (worker.joinable())
-				worker.join();  // Wait for each thread to finish
+				worker.join();
 		}
 	}
 

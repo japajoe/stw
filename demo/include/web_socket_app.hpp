@@ -10,7 +10,6 @@ public:
 	void run();
 private:
 	stw::web_socket socket;
-	void on_signal(int n);
 };
 
 #endif

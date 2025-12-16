@@ -12,6 +12,7 @@ namespace stw::file
 	void write_all_bytes(const std::string &filePath, const void *data, size_t size);
 	std::string read_all_text(const std::string &filePath);
 	std::vector<uint8_t> read_all_bytes(const std::string &filePath);
+	std::vector<std::string> read_all_lines(const std::string &filePath);
 	size_t get_size(const std::string &filePath);
 	bool is_within_directory(const std::string &filePath, const std::string &directoryPath);
 	std::string get_name(const std::string &filePath, bool withExtension);

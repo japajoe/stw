@@ -4,13 +4,29 @@
 
 web_socket_app::web_socket_app()
 {
-	stw::signal::register_handler([this](int n){on_signal(n);});
+	stw::signal::register_handler([this](int n) { 
+		if(n == SIGINT)
+		{
+			socket.send(stw::web_socket_opcode_close, nullptr, 0, true);
+			socket.close();
+			close(0);
+		}
+		if(n == SIGTERM)
+		{
+			socket.send(stw::web_socket_opcode_close, nullptr, 0, true);
+			socket.close();
+		}
+	});
+
 	stw::signal::register_signal(SIGINT);
 	stw::signal::register_signal(SIGTERM);
 #ifndef STW_PLATFORM_WINDOWS
 	stw::signal::register_signal(SIGPIPE);
 #endif
+}
 
+void web_socket_app::run()
+{
 	socket.onReceived = [] (const stw::web_socket *s, stw::web_socket_message &m) {
 		if(m.opcode == stw::web_socket_opcode_text)
 		{
@@ -22,10 +38,7 @@ web_socket_app::web_socket_app()
 			}
 		}
 	};
-}
 
-void web_socket_app::run()
-{
 	if(socket.connect("wss://pumpportal.fun/api/data"))
 	{
 		socket.set_blocking(false);
@@ -37,20 +50,5 @@ void web_socket_app::run()
 			socket.receive();
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
-	}
-}
-
-void web_socket_app::on_signal(int n)
-{
-	if(n == SIGINT)
-	{
-		socket.send(stw::web_socket_opcode_close, nullptr, 0, true);
-		socket.close();
-		close(0);
-	}
-	if(n == SIGTERM)
-	{
-		socket.send(stw::web_socket_opcode_close, nullptr, 0, true);
-		socket.close();
 	}
 }

@@ -122,7 +122,7 @@ namespace stw
 			if(!libraryHandleSsl)
 				return false;
 
-		#ifdef _WIN32
+		#ifdef STW_PLATFORM_WINDOWS
 			libraryHandleCrypto = stw::runtime::load_library(libraryPathCrypto);
 
 			if(!libraryHandleCrypto)
@@ -150,7 +150,7 @@ namespace stw
 
 			void *handle = libraryHandleSsl;
 
-		#ifdef _WIN32
+		#ifdef STW_PLATFORM_WINDOWS
 			handle = libraryHandleCrypto;
 		#endif
 

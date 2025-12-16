@@ -536,13 +536,6 @@ namespace stw
         std::string line;
         size_t count = 0;
 
-        auto to_lower = [] (const std::string &str) -> std::string {
-            std::string lower_str = str;
-            std::transform(lower_str.begin(), lower_str.end(), lower_str.begin(),
-                        [](unsigned char c) { return std::tolower(c); });
-            return lower_str;
-        };
-
         while(std::getline(responseStream, line))
         {
             line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
