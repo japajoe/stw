@@ -5,22 +5,26 @@ web_app::web_app()
 {
 	stw::signal::register_handler([this](int n) {
 		if(n == SIGINT)
-			server.stop();
-	#ifndef _WIN32
-		if(n == SIGPIPE) 
 		{
-			//std::cout << "Broken pipe\n";
+			server.stop();
+			exit(0);
 		}
 		if(n == SIGTERM)
 		{
 			server.stop();
 		}
+	#ifndef STW_PLATFORM_WINDOWS
+		if(n == SIGPIPE) 
+		{
+			//std::cout << "Broken pipe\n";
+		}
 	#endif
+
 	});
 	
 	stw::signal::register_signal(SIGINT);
-#ifndef _WIN32
 	stw::signal::register_signal(SIGTERM);
+#ifndef STW_PLATFORM_WINDOWS
 	stw::signal::register_signal(SIGPIPE);
 #endif
 }
