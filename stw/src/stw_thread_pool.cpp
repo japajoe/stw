@@ -4,6 +4,8 @@ namespace stw
 {
 	thread_pool::thread_pool()
 	{
+		stopFlag.store(false);
+
 		size_t numThreads = std::thread::hardware_concurrency();
 
 		for (size_t i = 0; i < numThreads; ++i) 
@@ -16,7 +18,7 @@ namespace stw
 
 	thread_pool::~thread_pool()
 	{
-		stopFlag = true;
+		stopFlag.store(true);
 		cv.notify_all();
 		
 		for (auto &worker : workers) 
