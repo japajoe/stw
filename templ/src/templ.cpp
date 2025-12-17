@@ -59,6 +59,14 @@ namespace templ
     { \
 		std::string v = std::to_string(val); \
 		WRITE_TO_OUTPUT(v.data(), v.size()); \
+    }
+
+#define echo(val) \
+    { \
+		ss << val; \
+		if (!ss.fail()) \
+			output.append(ss.str()); \
+		ss.clear(); \
     })";
 
 	static std::string headerEnd =
@@ -152,6 +160,7 @@ namespace templ
 		// Required includes
 		includes.insert("#include <string>");
 		includes.insert("#include <cstring>");
+		includes.insert("#include <sstream>");
 
 		// Find all #include matches
 		std::string::const_iterator searchStart(templateString.cbegin());
@@ -183,8 +192,6 @@ namespace templ
 
 	static std::string parse(const std::string &templateString)
 	{
-		//const std::string delimiterOpen = "<cpp>";
-		//const std::string delimiterClose = "</cpp>";
 		const std::string delimiterOpen = "<?cpp";
 		const std::string delimiterClose = "?>";
 
@@ -321,6 +328,7 @@ namespace templ
 							 "    std::string get()\n" +
 							 "    {\n" +
 							 "        std::string output;\n" +
+							 "        std::stringstream ss;\n" +
 							 parse(content) + "\n\n" +
 							 "        return output;\n" +
 							 "    }\n" +
