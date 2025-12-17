@@ -29,7 +29,7 @@ namespace stw::runtime
 	bool find_library_path(const std::string &libraryName, std::string &libraryPath);
 	void set_current_working_directory(const std::string &directoryPath);
 	std::string get_current_working_directory();
-	bool run_command(const std::string &cmd, std::string &output);
+	bool run_command(const std::string &cmd, const std::string &args, std::string &output);
 }
 
 #endif

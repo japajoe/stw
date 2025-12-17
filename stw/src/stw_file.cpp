@@ -36,25 +36,39 @@ namespace stw::file
 		return fs::exists(filePath) && fs::is_regular_file(filePath);
 	}
 
-	void write_all_text(const std::string &filePath, const std::string &text)
+	bool write_all_text(const std::string &filePath, const std::string &text)
 	{
         std::ofstream f(filePath, std::ios_base::out);
         if (f.is_open())
         {
             f << text;
             f.close();
+			return true;
         }
+		return false;
 	}
 
-	void write_all_bytes(const std::string &filePath, const void *data, size_t size)
+	bool write_all_bytes(const std::string &filePath, const void *data, size_t size)
 	{
         std::ofstream f(filePath, std::ios::binary);
 
-        if (f)
-            f.write(reinterpret_cast<const char*>(data), size);
-
         if (f.is_open())
+		{
+            f.write(reinterpret_cast<const char*>(data), size);
             f.close();
+			return true;
+		}
+		return false;
+	}
+
+	bool remove(const std::string &filePath)
+	{
+		fs::path path(filePath);
+
+		if (!fs::exists(path))
+			return false;
+
+		return fs::remove(path);
 	}
 
 	std::string read_all_text(const std::string &filePath)

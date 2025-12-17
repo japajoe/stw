@@ -17,6 +17,8 @@
 // SOFTWARE.
 
 #include "stw_templ.hpp"
+#include "stw_runtime.hpp"
+#include "stw_file.hpp"
 #include <string>
 #include <vector>
 #include <set>
@@ -98,18 +100,6 @@ using http_headers = std::unordered_map<std::string, std::string>;
 				return false;
 		}
 		return true;
-	}
-
-	static bool write_all_text(const std::string &filePath, const std::string &text)
-	{
-		std::ofstream f(filePath, std::ios_base::out);
-		if (f.is_open())
-		{
-			f << text;
-			f.close();
-			return true;
-		}
-		return false;
 	}
 
 	static void emit_code(const std::string &input, std::string &output)
@@ -303,35 +293,35 @@ using http_headers = std::unordered_map<std::string, std::string>;
 		std::string includes = extract_includes_and_remove(content);
 
 		std::string output = description +							 
-							 beginFileIdentifier +
-							 includes + "\n\n" +
-							 headerStart + "\n\n" +
-							 "class " + className + "\n" +
-							 "{\n" +
-							 "public:\n" +
-							 "    std::string get(const std::string &requestPath_, const http_headers &requestHeaders_)\n" +
-							 "    {\n" +
-							 "        m_path_ = requestPath_;\n" +
-							 "        m_headers_ = requestHeaders_;\n" +
-							 parse(content) + "\n\n" +
-							 "        return m_output_;\n" +
-							 "    }\n" +
-							 "    std::string get_path() const\n" +
-							 "    {\n" +
-							 "        return m_path_;\n" +
-							 "    }\n" +
-							 "    http_headers get_headers() const\n" +
-							 "    {\n" +
-							 "        return m_headers_;\n" +
-							 "    }\n" +
-							 "private:\n" +
-							 "    std::string m_output_;\n" +
-							 "    std::stringstream m_ss_;\n" +
-							 "    std::string m_path_;\n" +
-							 "    http_headers m_headers_;\n" +
-							 "};\n\n" +
-							 headerEnd + "\n\n" +
-							 endFileIdentifier + "\n";
+		beginFileIdentifier +
+		includes + "\n\n" +
+		headerStart + "\n\n" +
+		"class " + className + "\n" +
+		"{\n" +
+		"public:\n" +
+		"    std::string get(const std::string &requestPath_, const http_headers &requestHeaders_)\n" +
+		"    {\n" +
+		"        m_path_ = requestPath_;\n" +
+		"        m_headers_ = requestHeaders_;\n" +
+		parse(content) + "\n\n" +
+		"        return m_output_;\n" +
+		"    }\n" +
+		"    std::string get_path() const\n" +
+		"    {\n" +
+		"        return m_path_;\n" +
+		"    }\n" +
+		"    http_headers get_headers() const\n" +
+		"    {\n" +
+		"        return m_headers_;\n" +
+		"    }\n" +
+		"private:\n" +
+		"    std::string m_output_;\n" +
+		"    std::stringstream m_ss_;\n" +
+		"    std::string m_path_;\n" +
+		"    http_headers m_headers_;\n" +
+		"};\n\n" +
+		headerEnd + "\n\n" +
+		endFileIdentifier + "\n";
 
 		std::string directoryPath("templates");
 
@@ -344,7 +334,7 @@ using http_headers = std::unordered_map<std::string, std::string>;
 		if (outputFilePath == nullptr)
 		{
 			std::string generatedFilePath = directoryPath + "/" + fileName + "_view.hpp";
-			if (write_all_text(generatedFilePath, output))
+			if (file::write_all_text(generatedFilePath, output))
 			{
 				std::cout << "Generated: " << generatedFilePath << '\n';
 				return true;
@@ -357,7 +347,7 @@ using http_headers = std::unordered_map<std::string, std::string>;
 		}
 		else
 		{
-			if (write_all_text(outputFilePath, output))
+			if (file::write_all_text(outputFilePath, output))
 			{
 				std::cout << "Generated " << outputFilePath << '\n';
 				return true;

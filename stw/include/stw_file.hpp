@@ -26,8 +26,9 @@
 namespace stw::file
 {
 	bool exists(const std::string &filePath);
-	void write_all_text(const std::string &filePath, const std::string &text);
-	void write_all_bytes(const std::string &filePath, const void *data, size_t size);
+	bool write_all_text(const std::string &filePath, const std::string &text);
+	bool write_all_bytes(const std::string &filePath, const void *data, size_t size);
+	bool remove(const std::string &filePath);
 	std::string read_all_text(const std::string &filePath);
 	std::vector<uint8_t> read_all_bytes(const std::string &filePath);
 	std::vector<std::string> read_all_lines(const std::string &filePath);
