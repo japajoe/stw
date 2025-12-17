@@ -16,7 +16,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "templ.hpp"
+#include "stw_templ.hpp"
 #include <string>
 #include <vector>
 #include <set>
@@ -30,7 +30,7 @@
 #include <regex>
 #include <stdexcept>
 
-namespace templ
+namespace stw::templ
 {
 	namespace fs = std::filesystem;
 

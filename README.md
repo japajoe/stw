@@ -5,7 +5,7 @@ Small library for making web based applications.
 - HTTP server.
 - HTTP client.
 - Web socket implementation for client and server.
-- Template library (`templ`) that lets you mix HTML and C++.
+- Template generator that lets you mix HTML and C++.
 
 # Requirements for Linux
 - libcurl (libcurl.so)
@@ -78,7 +78,7 @@ std::map<std::string,std::string> posts = {
 	</ul>
 
     <footer>
-        <p>Powered by stw and temple</p>
+        <p>Powered by stw</p>
     </footer>
 </body>
 </html>

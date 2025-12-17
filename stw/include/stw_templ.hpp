@@ -16,10 +16,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef TEMPL_TEMPL_HPP
-#define TEMPL_TEMPL_HPP
+#ifndef STW_TEMPL_HPP
+#define STW_TEMPL_HPP
 
-namespace templ
+namespace stw::templ
 {
 	void create_template(const char *filePath, const char *outputFilePath);
 }
