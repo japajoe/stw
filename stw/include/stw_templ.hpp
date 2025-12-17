@@ -21,7 +21,7 @@
 
 namespace stw::templ
 {
-	void create_template(const char *filePath, const char *outputFilePath);
+	bool create_template(const char *filePath, const char *outputFilePath);
 }
 
 #endif

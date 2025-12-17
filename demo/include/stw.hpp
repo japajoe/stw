@@ -35,6 +35,7 @@
 #include "../../stw/include/stw_socket.hpp"
 #include "../../stw/include/stw_ssl.hpp"
 #include "../../stw/include/stw_stream.hpp"
+#include "../../stw/include/stw_string.hpp"
 #include "../../stw/include/stw_templ.hpp"
 #include "../../stw/include/stw_web_socket.hpp"
 
