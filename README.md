@@ -25,6 +25,8 @@ openssl req -newkey rsa:4096 -x509 -sha256 -days 3650 -nodes -out cert.pem -keyo
 ```
 
 # Mixing HTML and C++
+Sure, the code highlighting isn't super great, and your code editor won't offer any code completion... But don't act like this isn't a cool feature! With the small and relatively simple `templ` library you can turn this template into a header file and serve dynamic HTML pages.
+
 ```php
 <?cpp
 #include <map>
