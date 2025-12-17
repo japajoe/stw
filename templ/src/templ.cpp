@@ -183,8 +183,10 @@ namespace templ
 
 	static std::string parse(const std::string &templateString)
 	{
-		const std::string delimiterOpen = "<cpp>";
-		const std::string delimiterClose = "</cpp>";
+		//const std::string delimiterOpen = "<cpp>";
+		//const std::string delimiterClose = "</cpp>";
+		const std::string delimiterOpen = "<?cpp";
+		const std::string delimiterClose = "?>";
 
 		size_t pos = 0;
 		size_t prevPos = 0;
