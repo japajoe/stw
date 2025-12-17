@@ -39,41 +39,18 @@ namespace templ
 	static std::string headerStart =
 		R"(#define WRITE_TO_OUTPUT(str, len) output.append(str, len)
 
-#define WRITE_STRING_LITERAL(val) \
-    { \
-		WRITE_TO_OUTPUT(val, strlen(val)); \
-    }
-
-#define WRITE_STRING(val) \
-    { \
-		WRITE_TO_OUTPUT(val.data(), val.size()); \
-    }
-
-#define WRITE_INT(val) \
-    { \
-		std::string v = std::to_string(val); \
-		WRITE_TO_OUTPUT(v.data(), v.size()); \
-    }
-
-#define WRITE_DOUBLE(val) \
-    { \
-		std::string v = std::to_string(val); \
-		WRITE_TO_OUTPUT(v.data(), v.size()); \
-    }
-
 #define echo(val) \
     { \
 		ss << val; \
 		if (!ss.fail()) \
 			output.append(ss.str()); \
 		ss.clear(); \
+		ss.str(""); \
     })";
 
 	static std::string headerEnd =
 		R"(#undef WRITE_TO_OUTPUT
-#undef WRITE_STRING_LITERAL
-#undef WRITE_INT
-#undef WRITE_DOUBLE)";
+#undef echo)";
 
 	static std::string get_file_name(const std::string &filePath, bool stripExtension = true)
 	{
