@@ -5,6 +5,7 @@ Small library for making web based applications.
 - HTTP server.
 - HTTP client.
 - Web socket implementation for client and server.
+- Template library (`templ`) that lets you mix HTML and C++.
 
 # Requirements for Linux
 - libcurl (libcurl.so)
