@@ -67,7 +67,7 @@ namespace stw
 
     struct http_server_configuration 
 	{
-        uint16_t port;
+        uint16_t portHttp;
         uint16_t portHttps;
         uint32_t maxHeaderSize;
         std::string bindAddress;
@@ -76,7 +76,6 @@ namespace stw
 		std::string publicHtmlPath;
 		std::string privateHtmlPath;
         std::string hostName;
-        bool useHttps;
         bool useHttpsForwarding;
         void load_default();
 		bool load_from_file(const std::string &filePath);

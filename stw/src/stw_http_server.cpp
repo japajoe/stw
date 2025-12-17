@@ -48,6 +48,12 @@ namespace stw
 
 		this->config = config;
 
+		if(config.portHttp == 0 && config.portHttps == 0)
+		{
+			std::cout << "Failed to start server, at least 1 port should be configured\n";
+			return;
+		}
+
 		if(!directory::exists(config.publicHtmlPath))
 			directory::create(config.publicHtmlPath);
 		
@@ -58,28 +64,38 @@ namespace stw
 		{
 			for(auto &listener : listeners)
 				listener.close();
-			listeners.clear();
 		}
 
-		listeners.emplace_back();
+		if(listeners.size() == 0)
+		{
+			// For simplicity add 2 listeners, regardless if they are used or not
+			listeners.emplace_back();
+			listeners.emplace_back();
+		}
 		
-		if(config.useHttps)
+		if(config.portHttps > 0)
 		{
 			if(!sslContext.create(config.certificatePath, config.privateKeyPath))
 				return;
-			listeners.emplace_back();
 		}
 
-		auto httpTask = std::async(std::launch::async, &http_server::accept_http, this);
-		(void)httpTask;
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
-
-		if(config.useHttps)
-		{
-			auto httpsTask = std::async(std::launch::async, &http_server::accept_https, this);
-			(void)httpsTask;
-		}
+        if(config.portHttp > 0 && config.portHttps > 0)
+        {
+            auto http = std::async(std::launch::async, &http_server::accept_http, this);
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            auto https = std::async(std::launch::async, &http_server::accept_https, this);
+        }
+        else
+        {
+            if(config.portHttp > 0)
+            {
+                auto http = std::async(std::launch::async, &http_server::accept_http, this);
+            }
+            if(config.portHttps > 0)
+            {
+                auto https = std::async(std::launch::async, &http_server::accept_https, this);
+            }
+        }
 	}
 
 	void http_server::stop()
@@ -91,7 +107,7 @@ namespace stw
 	{
 		auto &listener = listeners[0];
 
-		if(!listener.bind(config.bindAddress, config.port))
+		if(!listener.bind(config.bindAddress, config.portHttp))
 			return;
 
 		if(!listener.listen(100))
@@ -99,7 +115,7 @@ namespace stw
 			
 		listener.set_timeout(1);
 		
-		std::cout << "Server listening on: http://" << config.bindAddress << ':' << config.port << '\n';
+		std::cout << "Server listening on: http://" << config.bindAddress << ':' << config.portHttp << '\n';
 
 		while(!quit.load())
 		{
@@ -220,11 +236,11 @@ namespace stw
 			return;
 		}
 
-		if(!connection->is_secure() && config.useHttps && config.useHttpsForwarding) 
+		if(!connection->is_secure() && config.portHttps > 0 && config.useHttpsForwarding)
 		{
-			if(headers.contains("upgrade-insecure-requests"))
+			if(headers.contains("Upgrade-Insecure-Requests"))
 			{
-				const auto &upgrade = headers["upgrade-insecure-requests"];
+				const auto &upgrade = headers["Upgrade-Insecure-Requests"];
 				if(upgrade == "1")
 				{
 					http_headers responseHeaders;
@@ -553,7 +569,7 @@ namespace stw
 
 	void http_server_configuration::load_default() 
 	{
-		port = 8080;
+		portHttp = 8080;
 		portHttps = 8081;
 		maxHeaderSize = 16384;
 		bindAddress = "0.0.0.0";
@@ -562,15 +578,14 @@ namespace stw
 		publicHtmlPath = "www/public_html";
 		privateHtmlPath = "www/private_html";
 		hostName = "localhost";
-		useHttps = true;
 		useHttpsForwarding = true;
 	}
 
 	bool http_server_configuration::load_from_file(const std::string &filePath)
 	{
 		ini_reader reader;
-		reader.add_required_field("port", ini_reader::field_type_number);
-		reader.add_required_field("port_https", ini_reader::field_type_string);
+		reader.add_required_field("port_http", ini_reader::field_type_number);
+		reader.add_required_field("port_https", ini_reader::field_type_number);
 		reader.add_required_field("max_header_size", ini_reader::field_type_number);
 		reader.add_required_field("bind_address", ini_reader::field_type_string);
 		reader.add_required_field("certificate_path", ini_reader::field_type_string);
@@ -578,7 +593,6 @@ namespace stw
 		reader.add_required_field("public_html_path", ini_reader::field_type_string);
 		reader.add_required_field("private_html_path", ini_reader::field_type_string);
 		reader.add_required_field("host_name", ini_reader::field_type_string);
-		reader.add_required_field("use_https", ini_reader::field_type_boolean);
 		reader.add_required_field("use_https_forwarding", ini_reader::field_type_boolean);
 
 		try
@@ -592,13 +606,11 @@ namespace stw
 			privateHtmlPath = fields["private_html_path"].value;
 			hostName = fields["host_name"].value;
 
-			if(!fields["port"].try_get_uint16(port))
+			if(!fields["port_http"].try_get_uint16(portHttp))
 				return false;
 			if(!fields["port_https"].try_get_uint16(portHttps))
 				return false;
 			if(!fields["max_header_size"].try_get_uint32(maxHeaderSize))
-				return false;
-			if(!fields["use_https"].try_get_boolean(useHttps))
 				return false;
 			if(!fields["use_https_forwarding"].try_get_boolean(useHttpsForwarding))
 				return false;
@@ -607,7 +619,7 @@ namespace stw
 		}
 		catch(const std::exception &e)
 		{
-			std::cerr << e.what() << '\n';
+			std::cout << e.what() << '\n';
 			return false;
 		}
 	}
