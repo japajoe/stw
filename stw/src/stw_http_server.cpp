@@ -260,6 +260,7 @@ namespace stw
 
 			http_request_info request = {
 				.path = path,
+				.ip = connection->get_ip(),
 				.headers = headers,
 				.method = httpMethod,
 				.contentLength = contentLength

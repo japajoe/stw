@@ -50,17 +50,18 @@ ${INCLUDES}
 namespace stw
 {
 	struct http_request_info;
+	struct http_response_info;
 }
 
-#define WRITE_TO_OUTPUT(str, len) m_output_.append(str, len)
+#define WRITE_TO_OUTPUT(str, len) m_responseInfo_.m_output_.append(str, len)
 
-#define echo(val)							\
-	{										\
-		m_ss_ << val;						\
-		if (!m_ss_.fail())					\
-			m_output_.append(m_ss_.str());	\
-		m_ss_.clear();						\
-		m_ss_.str("");						\
+#define echo(val)                                                              \
+	{                                                                          \
+		m_ss_ << val;                                                          \
+		if (!m_ss_.fail())                                                     \
+			m_responseInfo_.m_output_.append(m_ss_.str());                     \
+		m_ss_.clear();                                                         \
+		m_ss_.str("");                                                         \
 	}
 
 class ${CLASS_NAME}
@@ -68,31 +69,60 @@ class ${CLASS_NAME}
   private:
 	struct http_request_info {
 		std::string m_path_;
+		std::string m_ip_;
 		std::unordered_map<std::string, std::string> m_headers_;
 	};
 
+	struct http_response_info {
+		std::unordered_map<std::string, std::string> m_headers_;
+		std::string m_output_;
+	};
+
 	const http_request_info *m_requestInfo_;
-	std::string m_output_;
+	http_response_info m_responseInfo_;
+	void *m_userData_;
 	std::stringstream m_ss_;
   public:
-	std::string get(const stw::http_request_info *requestInfo)
+	${CLASS_NAME}()
+	{
+		m_requestInfo_ = nullptr;
+		m_userData_ = nullptr;
+	}
+	stw::http_response_info *get(const stw::http_request_info *requestInfo, void *userData = nullptr)
 	{
 		if(!requestInfo)
 			throw std::runtime_error("${CLASS_NAME}::get requestInfo can not be null");
 
 		this->m_requestInfo_ = reinterpret_cast<const http_request_info*>(requestInfo);
+		this->m_userData_ = userData;
 		
 		${GENERATED_CODE}
 
-		return this->m_output_;
+		return reinterpret_cast<stw::http_response_info*>(&m_responseInfo_);
 	}
 	std::string get_path() const
 	{
 		return this->m_requestInfo_->m_path_;
 	}
-	std::unordered_map<std::string, std::string> get_headers() const
+	std::string get_ip() const
+	{
+		return this->m_requestInfo_->m_ip_;
+	}
+	std::unordered_map<std::string, std::string> get_request_headers() const
 	{
 		return this->m_requestInfo_->m_headers_;
+	}
+	std::unordered_map<std::string, std::string> &get_response_headers()
+	{
+		return this->m_responseInfo_.m_headers_;
+	}
+	void set_response_header(const std::string &key, const std::string& value)
+	{
+		this->m_responseInfo_.m_headers_[key] = value;
+	}
+	void *get_user_data()
+	{
+		return this->m_userData_;
 	}
 };
 

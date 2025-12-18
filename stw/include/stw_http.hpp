@@ -150,9 +150,16 @@ namespace stw
 	struct http_request_info
 	{
 		std::string path;
+		std::string ip;
 		http_headers headers;
 		http_method method;
 		uint64_t contentLength;
+	};
+
+	struct http_response_info
+	{
+		http_headers headers;
+		std::string content;
 	};
 
     using http_response_callback = std::function<void(const void *data,size_t size)>;
