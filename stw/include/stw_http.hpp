@@ -147,6 +147,14 @@ namespace stw
         http_status_code_network_authentication_required = 511
     };
 
+	struct http_request_info
+	{
+		http_headers headers;
+		http_method method;
+		std::string path;
+		uint64_t contentLength;
+	};
+
     using http_response_callback = std::function<void(const void *data,size_t size)>;
 
     std::string http_method_to_string(http_method m);

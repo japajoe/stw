@@ -25,22 +25,92 @@ namespace stw
 		http_route r = {
 			.regex = std::regex(route),
 			.method = method,
-			.handler = handler
-		};
+			.requestHandler = handler,
+			.controllerHandler = nullptr};
 
 		routes.push_back(r);
 	}
 
-	http_route *http_router::get(const std::string &url)
+	http_route *http_router::get(const std::string &route)
 	{
-		for (auto &route : routes) 
-        {
-            std::smatch match;
+		for (auto &r : routes)
+		{
+			std::smatch match;
 
-            if (std::regex_match(url, match, route.regex))
-                return &route;
-        }
+			if (std::regex_match(route, match, r.regex))
+				return &r;
+		}
 
-        return nullptr;
+		return nullptr;
+	}
+
+	bool http_router::process_request(const std::string &route, stw::http_connection *connection, const stw::http_request_info &request)
+	{
+		auto r = get(route);
+
+		if (!r)
+			return false;
+
+		if (r->requestHandler)
+		{
+			if (r->method == request.method)
+				r->requestHandler(connection, request);
+			else
+				connection->write_response(stw::http_status_code_method_not_allowed);
+		}
+		else
+		{
+			if (r->controllerHandler)
+			{
+				auto controller = r->controllerHandler();
+				
+				if (controller)
+				{
+					switch (request.method)
+					{
+					case http_method_get:
+						controller->on_get(connection, request);
+						break;
+					case http_method_post:
+						controller->on_get(connection, request);
+						break;
+					case http_method_put:
+						controller->on_get(connection, request);
+						break;
+					case http_method_patch:
+						controller->on_get(connection, request);
+						break;
+					case http_method_delete:
+						controller->on_get(connection, request);
+						break;
+					case http_method_head:
+						controller->on_get(connection, request);
+						break;
+					case http_method_options:
+						controller->on_get(connection, request);
+						break;
+					case http_method_trace:
+						controller->on_get(connection, request);
+						break;
+					case http_method_connect:
+						controller->on_get(connection, request);
+						break;
+					default:
+						controller->on_unknown_method(connection, request);
+					}
+				}
+				else
+				{
+					// Out of memory
+					connection->write_response(stw::http_status_code_internal_server_error);
+				}
+			}
+			else
+			{
+				// This shouldn't actually happen
+				connection->write_response(stw::http_status_code_internal_server_error);
+			}
+		}
+		return true;
 	}
 }

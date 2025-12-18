@@ -20,29 +20,49 @@
 #define STW_HTTP_ROUTER_HPP
 
 #include "stw_http.hpp"
-#include "stw_http_server.hpp"
+#include "stw_http_connection.hpp"
+#include "stw_http_controller.hpp"
 #include <vector>
 #include <regex>
 #include <functional>
+#include <memory>
+#include <type_traits>
 
 namespace stw
 {
 	using http_request_handler = std::function<void(stw::http_connection *connection, const stw::http_request_info &request)>;
+	using http_controller_handler = std::function<std::unique_ptr<http_controller>()>;
 
 	struct http_route
 	{
 		std::regex regex;
 		http_method method;
-		http_request_handler handler;
+		http_request_handler requestHandler;
+		http_controller_handler controllerHandler;
 	};
-	
+
 	class http_router
 	{
 	public:
+		bool process_request(const std::string &route, stw::http_connection *connection, const stw::http_request_info &request);
 		void add(http_method method, const std::string &route, http_request_handler handler);
-		http_route *get(const std::string &route);
+		template <typename T>
+		void add(const std::string &route) 
+		{
+            static_assert(std::is_base_of<http_controller, T>::value, "http_router::add parameter T must derive from http_controller");
+
+			http_route r = {
+				.regex = std::regex(route),
+				.method = http_method_unknown,
+				.requestHandler = nullptr,
+				.controllerHandler = []() { return std::make_unique<T>(); }
+			};
+
+			routes.push_back(r);
+		}
 	private:
 		std::vector<http_route> routes;
+		http_route *get(const std::string &route);
 	};
 }
 

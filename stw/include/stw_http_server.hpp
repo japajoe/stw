@@ -22,7 +22,7 @@
 #include "stw_socket.hpp"
 #include "stw_ssl.hpp"
 #include "stw_http.hpp"
-#include "stw_stream.hpp"
+#include "stw_http_connection.hpp"
 #include "stw_thread_pool.hpp"
 #include <string>
 #include <functional>
@@ -31,40 +31,6 @@
 
 namespace stw
 {
-	class http_connection
-	{
-	public:
-		http_connection(socket &connection);
-		http_connection(socket &connection, ssl &s);
-		http_connection(const http_connection &other) = delete;
-		http_connection(http_connection &&other) noexcept;
-		http_connection &operator=(const http_connection &other) = delete;
-		http_connection &operator=(http_connection &&other) noexcept;
-		int64_t read(void *buffer, size_t size);
-		int64_t write(const void *buffer, size_t size);
-		int64_t peek(void *buffer, size_t size);
-		int64_t read_all(void *buffer, size_t size);
-		int64_t write_all(const void *buffer, size_t size);
-		bool write_response(uint32_t statusCode);
-		bool write_response(uint32_t statusCode, const http_headers *headers);
-		bool write_response(uint32_t statusCode, const http_headers *headers, const void *content, uint64_t contentLength, const std::string &contentType);
-		bool write_response(uint32_t statusCode, const http_headers *headers, stream *content, const std::string &contentType);
-		void close();
-		bool is_secure() const;
-		std::string get_ip() const;
-	private:
-		socket connection;
-		ssl s;
-	};
-
-	struct http_request_info
-	{
-		http_headers headers;
-		http_method method;
-		std::string path;
-		uint64_t contentLength;
-	};
-
     struct http_server_configuration 
 	{
         uint16_t portHttp;

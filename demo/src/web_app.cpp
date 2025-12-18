@@ -79,19 +79,11 @@ void web_app::run()
 
 void web_app::on_request(stw::http_connection *connection, const stw::http_request_info &request)
 {
-	//std::cout << connection->get_ip() << " [" << stw::http_method_to_string(request.method) << "]: " << request.path << "\n";
+	std::cout << connection->get_ip() << " [" << stw::http_method_to_string(request.method) << "]: " << request.path << "\n";
 
-	stw::http_route *route = router.get(request.path);
-
-	if(route)
+	if(!router.process_request(request.path, connection, request))
 	{
-		if(route->method == request.method)
-			route->handler(connection, request);
-		else
-			connection->write_response(stw::http_status_code_method_not_allowed);
-	}
-	else // If no route was found, the user may have requested a file instead
-	{
+		// If no route was found, the user may have requested a file instead
 		std::string path = config.publicHtmlPath + request.path;
 
 		// Checks if the file exists, and if it's inside the public html directory or any of its children
