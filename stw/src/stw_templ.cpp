@@ -77,8 +77,13 @@ class ${CLASS_NAME}
   public:
 	std::string get(const stw::http_request_info *requestInfo)
 	{
+		if(!requestInfo)
+			throw std::runtime_error("${CLASS_NAME}::get requestInfo can not be null");
+
 		this->m_requestInfo_ = reinterpret_cast<const http_request_info*>(requestInfo);
+		
 		${GENERATED_CODE}
+
 		return this->m_output_;
 	}
 	std::string get_path() const
@@ -139,6 +144,7 @@ ${INCLUDE_GUARD_END})";
 		includes.insert("#include <cstring>");
 		includes.insert("#include <sstream>");
 		includes.insert("#include <unordered_map>");
+		includes.insert("#include <stdexcept>");
 
 		// Find all #include matches
 		std::string::const_iterator searchStart(templateString.cbegin());
