@@ -22,13 +22,7 @@ namespace stw
 {
 	void http_router::add(http_method method, const std::string &route, http_request_handler handler)
 	{
-		http_route r = {
-			.regex = std::regex(route),
-			.method = method,
-			.requestHandler = handler,
-			.controllerHandler = nullptr};
-
-		routes.push_back(r);
+		add(method, std::regex(route), handler);
 	}
 
 	void http_router::add(http_method method, const std::regex &route, http_request_handler handler)
@@ -73,7 +67,7 @@ namespace stw
 		{
 			if (r->controllerHandler)
 			{
-				auto controller = r->controllerHandler();
+				auto controller = std::unique_ptr<http_controller>(r->controllerHandler());
 				
 				if (controller)
 				{
@@ -83,28 +77,28 @@ namespace stw
 						controller->on_get(connection, request);
 						break;
 					case http_method_post:
-						controller->on_get(connection, request);
+						controller->on_post(connection, request);
 						break;
 					case http_method_put:
-						controller->on_get(connection, request);
+						controller->on_put(connection, request);
 						break;
 					case http_method_patch:
-						controller->on_get(connection, request);
+						controller->on_patch(connection, request);
 						break;
 					case http_method_delete:
-						controller->on_get(connection, request);
+						controller->on_delete(connection, request);
 						break;
 					case http_method_head:
-						controller->on_get(connection, request);
+						controller->on_head(connection, request);
 						break;
 					case http_method_options:
-						controller->on_get(connection, request);
+						controller->on_options(connection, request);
 						break;
 					case http_method_trace:
-						controller->on_get(connection, request);
+						controller->on_trace(connection, request);
 						break;
 					case http_method_connect:
-						controller->on_get(connection, request);
+						controller->on_connect(connection, request);
 						break;
 					default:
 						controller->on_unknown_method(connection, request);
@@ -122,6 +116,7 @@ namespace stw
 				connection->write_response(stw::http_status_code_internal_server_error);
 			}
 		}
+
 		return true;
 	}
 }

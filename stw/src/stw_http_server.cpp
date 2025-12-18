@@ -82,7 +82,7 @@ namespace stw
         if(config.portHttp > 0 && config.portHttps > 0)
         {
             auto http = std::async(std::launch::async, &http_server::accept_http, this);
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
             auto https = std::async(std::launch::async, &http_server::accept_https, this);
         }
         else
