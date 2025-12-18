@@ -25,7 +25,7 @@ openssl req -newkey rsa:4096 -x509 -sha256 -days 3650 -nodes -out cert.pem -keyo
 ```
 
 # Mixing HTML and C++
-Sure, the code highlighting isn't super great, and your code editor won't offer any code completion. On top of that, this abomination can be cumbersome to debug. That said, don't act like this isn't a cool feature! See `stw_templ.cpp` for more info.
+Sure, the code highlighting isn't super great, and your code editor won't offer any code completion. On top of that, this abomination can be cumbersome to debug. That said, don't act like this isn't a cool feature!
 
 ```php
 <?cpp
@@ -104,6 +104,58 @@ Sure, the code highlighting isn't super great, and your code editor won't offer 
     </footer>
 </body>
 </html>
+```
+
+To generate a header file from this template (or even multiple in a directory), you can do something like this:
+```cpp
+#include "stw_templ.hpp"
+
+void generate_templates()
+{
+	std::string inputDirectory = "path/to/template_directory";
+	std::string outputDirectory = "path/to/output_directory";
+
+	try
+	{
+		stw::templ::create_templates(inputDirectory.c_str(), outputDirectory.c_str(), "hpp");
+	}
+	catch(const std::runtime_error &ex)
+	{
+		std::cout << ex.what() << '\n';
+	}
+}
+```
+If successful, the generated files will be in the output directory. The class names will have the form `name_view.hpp`. You can now use this file in your project like so:
+
+```cpp
+#include "stw_http_server.hpp"
+#include "index_view.html" //Assuming you have a class called index_view
+
+int main()
+{
+	stw::http_server server;
+	stw::http_server_configuration config;
+
+	if(!config.load_from_file("config.ini"))
+		return 1;
+
+	server.onRequest = [this] (stw::http_connection *connection, const stw::http_request_info &request) {
+		if(request.path == "/index")
+		{
+			index_view view;
+			auto response = view.get(&request);
+			connection->write_response(stw::http_status_code_ok, &response->headers, response->content.data(), response->content.size(), "text/html");
+		}
+		else
+		{
+			connection->write_response(stw::http_status_code_not_found);
+		}
+	};
+
+	server.run(config);
+
+	return 0;
+}
 ```
 
 # Disclaimer

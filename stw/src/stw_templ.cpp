@@ -131,6 +131,11 @@ class ${CLASS_NAME}
 
 ${INCLUDE_GUARD_END})";
 
+	static void write_log(const std::string &message)
+	{
+		std::cout << "templ: " << message << '\n';
+	}
+
 	static bool create_directory_if_not_exist(const std::string &path)
 	{
 		if (!stw::directory::exists(path))
@@ -331,39 +336,63 @@ ${INCLUDE_GUARD_END})";
 		output = stw::string::replace(output, "${GENERATED_CODE}", generatedCode);
 		output = stw::string::replace(output, "${INCLUDE_GUARD_END}", "#endif //" + fileIdentifier + "_HPP");
 
+		auto saveFile = [] (const std::string &fileContent, const std::string &filePath) -> bool {
+			if (file::write_all_text(filePath, fileContent))
+			{
+				write_log("Generated view: " + filePath);
+				return true;
+			}
+			else
+			{
+				write_log("Failed to generate view:" + filePath);
+				return false;
+			}
+		};
+
 		// If no outputFilePath was given, we try to write the output to a newly created directory
 		if (outputFilePath == nullptr)
 		{
 			std::string directoryPath("templates");
 
 			if (!create_directory_if_not_exist(directoryPath))
-			{
 				throw std::runtime_error("Failed to create directory: " + directoryPath);
-			}
 
 			std::string generatedFilePath = directoryPath + "/" + fileName + "_view.hpp";
-			if (file::write_all_text(generatedFilePath, output))
-			{
-				std::cout << "Generated: " << generatedFilePath << '\n';
-				return true;
-			}
-			else
-			{
-				std::cout << "Failed to generate:" << generatedFilePath << '\n';
-				return false;
-			}
+
+			return saveFile(output, generatedFilePath);
 		}
 		else
 		{
-			if (file::write_all_text(outputFilePath, output))
+			return saveFile(output, outputFilePath);
+		}
+	}
+
+	void create_templates(const char *inputDirectory, const char *outputDirectory, const char *outputFileExtension)
+	{
+		if(!inputDirectory)
+			throw std::runtime_error("inputDirectory can not be null");
+
+		if(!outputDirectory)
+			throw std::runtime_error("outputDirectory can not be null");
+
+		auto files = stw::directory::get_files(inputDirectory);
+
+		if(files.size() == 0)
+			throw std::runtime_error("The input directory does not exist or has no files");
+
+		std::string extension = outputFileExtension ? std::string(extension) : "hpp";
+		
+		for(const auto &file : files)
+		{
+			std::string outputFile = std::string(outputDirectory) + "/" + stw::file::get_name(file, false) + "_view." + extension;
+			
+			try
 			{
-				std::cout << "Generated " << outputFilePath << '\n';
-				return true;
+				create_template(file.c_str(), outputFile.c_str());
 			}
-			else
+			catch(const std::runtime_error &ex)
 			{
-				std::cout << "Failed to generate:" << outputFilePath << '\n';
-				return false;
+				std::cout << ex.what() << '\n';
 			}
 		}
 	}

@@ -22,6 +22,8 @@
 namespace stw::templ
 {
 	bool create_template(const char *filePath, const char *outputFilePath);
+	//outputFileExtension without leading period (.), pass nullptr to default to '.hpp'
+	void create_templates(const char *inputDirectory, const char *outputDirectory, const char *outputFileExtension = nullptr);
 }
 
 #endif
