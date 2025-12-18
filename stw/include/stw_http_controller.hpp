@@ -27,8 +27,6 @@
 
 namespace stw
 {
-	struct view_data;
-
 	class http_controller
 	{
 	public:
@@ -43,17 +41,6 @@ namespace stw
 		virtual void on_trace(http_connection *connection, const http_request_info &request);
 		virtual void on_connect(http_connection *connection, const http_request_info &request);
 		virtual void on_unknown_method(http_connection *connection, const http_request_info &request);
-	protected:
-		struct view_info
-		{
-			std::string output;
-			std::stringstream ss;
-			std::string path;
-			http_headers headers;
-		};
-		view_data *get_view_data(const http_request_info &request);
-	private:
-		view_info viewData;
 	};
 }
 

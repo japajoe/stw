@@ -49,45 +49,45 @@ ${INCLUDES}
 
 namespace stw
 {
-	struct view_data;
+	struct http_request_info;
 }
 
-#define WRITE_TO_OUTPUT(str, len) this->m_viewData_->m_output_.append(str, len)
+#define WRITE_TO_OUTPUT(str, len) m_output_.append(str, len)
 
-#define echo(val)                                                              \
-	{                                                                          \
-		this->m_viewData_->m_ss_ << val;                                       \
-		if (!this->m_viewData_->m_ss_.fail())                                  \
-			this->m_viewData_->m_output_.append(                               \
-				this->m_viewData_->m_ss_.str());                               \
-		this->m_viewData_->m_ss_.clear();                                      \
-		this->m_viewData_->m_ss_.str("");                                      \
+#define echo(val)							\
+	{										\
+		m_ss_ << val;						\
+		if (!m_ss_.fail())					\
+			m_output_.append(m_ss_.str());	\
+		m_ss_.clear();						\
+		m_ss_.str("");						\
 	}
 
 class ${CLASS_NAME}
 {
   private:
-	struct view_data {
-		std::string m_output_;
-		std::stringstream m_ss_;
+	struct http_request_info {
 		std::string m_path_;
 		std::unordered_map<std::string, std::string> m_headers_;
 	};
-	view_data *m_viewData_;
+
+	const http_request_info *m_requestInfo_;
+	std::string m_output_;
+	std::stringstream m_ss_;
   public:
-	std::string get(stw::view_data *viewData)
+	std::string get(const stw::http_request_info *requestInfo)
 	{
-		this->m_viewData_ = reinterpret_cast<view_data*>(viewData);
+		this->m_requestInfo_ = reinterpret_cast<const http_request_info*>(requestInfo);
 		${GENERATED_CODE}
-		return this->m_viewData_->m_output_;
+		return this->m_output_;
 	}
 	std::string get_path() const
 	{
-		return this->m_viewData_->m_path_;
+		return this->m_requestInfo_->m_path_;
 	}
 	std::unordered_map<std::string, std::string> get_headers() const
 	{
-		return this->m_viewData_->m_headers_;
+		return this->m_requestInfo_->m_headers_;
 	}
 };
 

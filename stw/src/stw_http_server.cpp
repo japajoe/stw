@@ -259,9 +259,9 @@ namespace stw
 			http_method httpMethod = string_to_http_method(method);
 
 			http_request_info request = {
+				.path = path,
 				.headers = headers,
 				.method = httpMethod,
-				.path = path,
 				.contentLength = contentLength
 			};
 

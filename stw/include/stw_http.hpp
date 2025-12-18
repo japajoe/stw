@@ -149,9 +149,9 @@ namespace stw
 
 	struct http_request_info
 	{
+		std::string path;
 		http_headers headers;
 		http_method method;
-		std::string path;
 		uint64_t contentLength;
 	};
 
