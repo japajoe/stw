@@ -112,12 +112,12 @@ To generate a header file from this template (or even multiple in a directory), 
 
 int main()
 {
-	std::string inputDirectory = "path/to/template_directory";
-	std::string outputDirectory = "path/to/output_directory";
+	const char *inputDirectory = "path/to/template_directory";
+	const char *outputDirectory = "path/to/output_directory";
 
 	try
 	{
-		stw::templ::create_templates(inputDirectory.c_str(), outputDirectory.c_str(), "hpp");
+		stw::templ::create_templates(inputDirectory, outputDirectory, "hpp");
 	}
 	catch(const std::runtime_error &ex)
 	{
