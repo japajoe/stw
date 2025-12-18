@@ -161,4 +161,4 @@ int main()
 ```
 
 # Disclaimer
-This library is just for educational purposes.
+This library is just for educational purposes. It is a means for me to have fun while exploring new concepts and improve my understanding of networking and cross-platform development. Use at your own discretion.
