@@ -127,7 +127,7 @@ int main()
 	return 0;
 }
 ```
-If successful, the generated files will be in the output directory. The class names will have the form `name_view.hpp`. You can now use this file in your project like so:
+If successful, the generated files will be in the output directory. The class names will have the form `name_view.hpp`. You can now use these files in your project like so:
 
 ```cpp
 #include "stw_http_server.hpp"
