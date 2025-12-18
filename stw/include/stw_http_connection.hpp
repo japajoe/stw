@@ -45,6 +45,7 @@ namespace stw
 		bool write_response(uint32_t statusCode, const http_headers *headers);
 		bool write_response(uint32_t statusCode, const http_headers *headers, const void *content, uint64_t contentLength, const std::string &contentType);
 		bool write_response(uint32_t statusCode, const http_headers *headers, stream *content, const std::string &contentType);
+		bool write_response(uint32_t statusCode, const http_response_info *responseInfo, const std::string &contentType);
 		void close();
 		bool is_secure() const;
 		std::string get_ip() const;
