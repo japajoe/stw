@@ -52,7 +52,8 @@ void web_app::run()
 	if(!config.load_from_file("config.ini"))
 		return;
 
-	router.add(stw::http_method_get, "^/$|^/index$|^/Index$", [&] (stw::http_connection *c, const stw::http_request_info &r) {
+	// This regex matches to "/" or "/index" and is case insensitive
+	router.add(stw::http_method_get, std::regex("^/$|^/index$", std::regex_constants::icase), [&] (stw::http_connection *c, const stw::http_request_info &r) {
 		std::string filePath = config.publicHtmlPath + "/index.html";
 		send_file_content(c, stw::http_status_code_ok, filePath);
 	});

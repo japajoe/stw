@@ -31,6 +31,17 @@ namespace stw
 		routes.push_back(r);
 	}
 
+	void http_router::add(http_method method, const std::regex &route, http_request_handler handler)
+	{
+		http_route r = {
+			.regex = route,
+			.method = method,
+			.requestHandler = handler,
+			.controllerHandler = nullptr};
+
+		routes.push_back(r);
+	}
+
 	http_route *http_router::get(const std::string &route)
 	{
 		for (auto &r : routes)

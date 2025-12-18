@@ -46,6 +46,7 @@ namespace stw
 	public:
 		bool process_request(const std::string &route, stw::http_connection *connection, const stw::http_request_info &request);
 		void add(http_method method, const std::string &route, http_request_handler handler);
+		void add(http_method method, const std::regex &route, http_request_handler handler);
 		template <typename T>
 		void add(const std::string &route) 
 		{
