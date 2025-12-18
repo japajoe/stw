@@ -27,6 +27,8 @@
 
 namespace stw
 {
+	struct view_data;
+
 	class http_controller
 	{
 	public:
@@ -42,7 +44,7 @@ namespace stw
 		virtual void on_connect(http_connection *connection, const http_request_info &request);
 		virtual void on_unknown_method(http_connection *connection, const http_request_info &request);
 	protected:
-		struct view_data
+		struct view_info
 		{
 			std::string output;
 			std::stringstream ss;
@@ -51,7 +53,7 @@ namespace stw
 		};
 		view_data *get_view_data(const http_request_info &request);
 	private:
-		view_data viewData;
+		view_info viewData;
 	};
 }
 

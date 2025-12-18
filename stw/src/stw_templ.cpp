@@ -49,6 +49,11 @@ ${INCLUDE_GUARD_START_2}
 #include <unordered_map>
 ${INCLUDES}
 
+namespace stw
+{
+	struct view_data;
+}
+
 #define WRITE_TO_OUTPUT(str, len) this->m_viewData_->m_output_.append(str, len)
 
 #define echo(val)                                                              \
@@ -69,17 +74,17 @@ using http_headers = std::unordered_map<std::string, std::string>;
 class ${CLASS_NAME}
 {
   private:
-	struct view_data {
+	struct view_info {
 		std::string m_output_;
 		std::stringstream m_ss_;
 		std::string m_path_;
 		http_headers m_headers_;
 	};
-	view_data *m_viewData_;
+	view_info *m_viewData_;
   public:
-	std::string get(void *viewData)
+	std::string get(stw::view_data *viewData)
 	{
-		this->m_viewData_ = reinterpret_cast<view_data *>(viewData);
+		this->m_viewData_ = reinterpret_cast<view_info *>(viewData);
 		${GENERATED_CODE}
 		return this->m_viewData_->m_output_;
 	}

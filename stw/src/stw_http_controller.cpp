@@ -70,10 +70,10 @@ namespace stw
 		connection->write_response(http_status_code_not_implemented);
 	}
 
-	http_controller::view_data *http_controller::get_view_data(const http_request_info &request)
+	view_data *http_controller::get_view_data(const http_request_info &request)
 	{
 		viewData.path = request.path;
 		viewData.headers = request.headers;
-		return &viewData;
+		return reinterpret_cast<view_data*>(&viewData);
 	}
 }
