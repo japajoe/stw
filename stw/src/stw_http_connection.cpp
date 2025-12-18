@@ -169,11 +169,11 @@ namespace stw
 		return false;
 	}
 
-	bool http_connection::write_response(uint32_t statusCode, const http_response_info *responseInfo, const std::string &contentType)
+	bool http_connection::write_response(uint32_t statusCode, const http_response_info *responseInfo)
 	{
 		if(!responseInfo)
 			return false;
-		return write_response(statusCode, &responseInfo->headers, responseInfo->content.data(), responseInfo->content.size(), contentType);
+		return write_response(statusCode, &responseInfo->headers, responseInfo->content.data(), responseInfo->content.size(), responseInfo->contentType);
 	}
 
 	void http_connection::close()

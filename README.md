@@ -146,7 +146,7 @@ int main()
 		{
 			index_view view;
 			auto response = view.get(&request);
-			connection->write_response(stw::http_status_code_ok, response, "text/html");
+			connection->write_response(stw::http_status_code_ok, response);
 		}
 		else
 		{

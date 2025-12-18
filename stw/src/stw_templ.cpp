@@ -76,6 +76,7 @@ class ${CLASS_NAME}
 	struct http_response_info {
 		std::unordered_map<std::string, std::string> m_headers_;
 		std::string m_output_;
+		std::string m_contentType_;
 	};
 
 	const http_request_info *m_requestInfo_;
@@ -97,6 +98,8 @@ class ${CLASS_NAME}
 		this->m_userData_ = userData;
 		
 		${GENERATED_CODE}
+
+		m_responseInfo_.m_contentType_ = "text/html";
 
 		return reinterpret_cast<stw::http_response_info*>(&m_responseInfo_);
 	}

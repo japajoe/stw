@@ -160,6 +160,7 @@ namespace stw
 	{
 		http_headers headers;
 		std::string content;
+		std::string contentType;
 	};
 
     using http_response_callback = std::function<void(const void *data,size_t size)>;
