@@ -110,7 +110,7 @@ To generate a header file from this template (or even multiple in a directory), 
 ```cpp
 #include "stw_templ.hpp"
 
-void generate_templates()
+int main()
 {
 	std::string inputDirectory = "path/to/template_directory";
 	std::string outputDirectory = "path/to/output_directory";
@@ -123,6 +123,8 @@ void generate_templates()
 	{
 		std::cout << ex.what() << '\n';
 	}
+
+	return 0;
 }
 ```
 If successful, the generated files will be in the output directory. The class names will have the form `name_view.hpp`. You can now use this file in your project like so:
