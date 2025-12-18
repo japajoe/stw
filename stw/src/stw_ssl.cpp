@@ -166,8 +166,11 @@ namespace stw
 			SSL_CTX_use_PrivateKey_file_ptr = (SSL_CTX_use_PrivateKey_file_t)stw::runtime::get_symbol(libraryHandleSsl, "SSL_CTX_use_PrivateKey_file");
 			SSL_CTX_check_private_key_ptr = (SSL_CTX_check_private_key_t)stw::runtime::get_symbol(libraryHandleSsl, "SSL_CTX_check_private_key");
 
+			// On Linux and Mac we can obtain the libcrypto symbols through libssl itself
+			// In this case we don't need to load libcrypto
 			void *handle = libraryHandleSsl;
 
+			// On Windows libcrypto must be manually loaded
 		#ifdef STW_PLATFORM_WINDOWS
 			handle = libraryHandleCrypto;
 		#endif

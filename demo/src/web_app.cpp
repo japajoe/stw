@@ -28,16 +28,7 @@ web_app::web_app()
 			exit(0);
 		}
 		if(n == SIGTERM)
-		{
 			server.stop();
-		}
-	#ifndef STW_PLATFORM_WINDOWS
-		if(n == SIGPIPE) 
-		{
-			//std::cout << "Broken pipe\n";
-		}
-	#endif
-
 	});
 	
 	stw::signal::register_signal(SIGINT);
@@ -68,7 +59,7 @@ void web_app::run()
 				std::cout << requestText << '\n';
 			}
 		}
-		c->write_response(200);
+		c->write_response(stw::http_status_code_ok);
 	});
 
 	server.onRequest = [this] (stw::http_connection *c, const stw::http_request_info &r) {

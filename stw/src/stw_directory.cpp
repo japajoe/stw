@@ -29,10 +29,11 @@ namespace stw::directory
         return fs::exists(path) && fs::is_directory(path);
 	}
 
-	void create(const std::string &directoryPath)
+	bool create(const std::string &directoryPath)
 	{
         if (!exists(directoryPath))
-            fs::create_directories(fs::path(directoryPath));
+            return fs::create_directories(fs::path(directoryPath));
+		return false;
 	}
 
 	std::vector<std::string> get_files(const std::string &directoryPath, bool recursive)

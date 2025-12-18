@@ -25,7 +25,7 @@
 namespace stw::directory
 {
 	bool exists(const std::string &directoryPath);
-	void create(const std::string &directoryPath);
+	bool create(const std::string &directoryPath);
 	std::vector<std::string> get_files(const std::string &directoryPath, bool recursive = false);
 }
 
