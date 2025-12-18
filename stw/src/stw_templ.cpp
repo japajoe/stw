@@ -380,7 +380,7 @@ ${INCLUDE_GUARD_END})";
 		if(files.size() == 0)
 			throw std::runtime_error("The input directory does not exist or has no files");
 
-		std::string extension = outputFileExtension ? std::string(extension) : "hpp";
+		std::string extension = outputFileExtension ? std::string(outputFileExtension) : "hpp";
 		
 		for(const auto &file : files)
 		{
