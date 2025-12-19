@@ -133,6 +133,7 @@ int main()
 If successful, the generated files will be in the output directory. The class names will have the form `name_view.hpp`. You can now use these files in your project like so:
 
 ```cpp
+#include "stw/core/stw_stw.hpp"
 #include "stw/net/stw_http_server.hpp"
 #include "index_view.html" //Assuming you have a class called index_view
 
@@ -140,6 +141,8 @@ int main()
 {
 	stw::http_server server;
 	stw::http_server_configuration config;
+
+	stw::load_library();
 
 	if(!config.load_from_file("config.ini"))
 		return 1;
