@@ -42,6 +42,5 @@
 #include "../../stw/include/stw_templ.hpp"
 #include "../../stw/include/stw_thread_pool.hpp"
 #include "../../stw/include/stw_web_socket.hpp"
-#include "../../stw/include/stw_zlib.hpp"
 
 #endif
