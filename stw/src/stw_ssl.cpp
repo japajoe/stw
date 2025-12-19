@@ -258,6 +258,32 @@ namespace stw
 			return libraryHandleSsl != nullptr;
 		}
 
+		bool load_library()
+		{
+			if(is_loaded())
+				return true;
+		
+			std::string sslPath;
+			std::string cryptoPath;
+		#if defined(STW_PLATFORM_WINDOWS)
+			sslPath = "libssl-3-x64.dll";
+			cryptoPath = "libcrypto-3-x64.dll";
+		#elif defined(STW_PLATFORM_LINUX)
+			stw::runtime::find_library_path("libssl.so", sslPath);
+		#elif defined(STW_PLATFORM_MAC)
+			//Not implemented yet
+			return false;
+		#endif
+		
+			if(sslPath.size() > 0)
+			{
+				if(openssl::load_library(sslPath, cryptoPath))
+					return true;
+			}
+
+			return false;
+		}
+
 		SSL_CTX *SSL_CTX_new(const SSL_METHOD *meth)
 		{
 			if(!libraryHandleSsl)
@@ -469,36 +495,9 @@ namespace stw
 		}
 	}
 
-	static bool load_open_ssl()
-	{
-		if(openssl::is_loaded())
-			return true;
-	
-		std::string sslPath;
-		std::string cryptoPath;
-	#if defined(STW_PLATFORM_WINDOWS)
-		sslPath = "libssl-3-x64.dll";
-		cryptoPath = "libcrypto-3-x64.dll";
-	#elif defined(STW_PLATFORM_LINUX)
-		stw::runtime::find_library_path("libssl.so", sslPath);
-	#elif defined(STW_PLATFORM_MAC)
-		//Not implemented yet
-		return false;
-	#endif
-	
-		if(sslPath.size() > 0)
-		{
-			if(openssl::load_library(sslPath, cryptoPath))
-				return true;
-		}
-
-		return false;
-	}
-
 	ssl_context::ssl_context()
 	{
 		pContext = nullptr;
-		load_open_ssl();
 	}
 
 	ssl_context::~ssl_context()
@@ -588,7 +587,6 @@ namespace stw
 	ssl::ssl()
 	{
 		pSsl = nullptr;
-		load_open_ssl();
 	}
 
 	ssl::~ssl()

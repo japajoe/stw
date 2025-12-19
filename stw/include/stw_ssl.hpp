@@ -24,6 +24,11 @@
 
 namespace stw
 {
+	namespace openssl
+	{
+		bool load_library();
+	}
+
 	typedef void SSL;
 	typedef void SSL_CTX;
 

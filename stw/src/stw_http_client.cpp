@@ -244,13 +244,6 @@ namespace stw
 			return true;
 		}
 
-		void close_library()
-		{
-			if(libraryHandle)
-				stw::runtime::unload_library(libraryHandle);
-			libraryHandle = nullptr;
-		}
-
 		bool is_loaded()
 		{
 			return libraryHandle != nullptr;
@@ -351,6 +344,41 @@ namespace stw
 		{
 			return curl_easy_strerror_ptr(code);
 		}
+
+		bool load_library()
+		{
+			if(is_loaded())
+				return true;
+		
+			std::string curlPath;
+			
+		#if defined(STW_PLATFORM_WINDOWS)
+			curlPath = "libcurl-x64.dll";
+		#elif defined(STW_PLATFORM_LINUX)
+			stw::runtime::find_library_path("libcurl.so", curlPath);
+		#elif defined(STW_PLATFORM_MAC)
+			//Not implemented yet
+			return false;
+		#endif
+		
+			if(curlPath.size() > 0)
+			{
+				if(load_library(curlPath))
+				{
+					global_init(CURL_GLOBAL_DEFAULT);
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		void close_library()
+		{
+			if(libraryHandle)
+				stw::runtime::unload_library(libraryHandle);
+			libraryHandle = nullptr;
+		}
 	}
 
     static void write_error(const std::string &message) 
@@ -358,38 +386,9 @@ namespace stw
 		std::cerr << message << '\n';
     }
 
-    static bool load_curl()
-    {
-		if(curl::is_loaded())
-			return true;
-	
-		std::string curlPath;
-		
-	#if defined(STW_PLATFORM_WINDOWS)
-		curlPath = "libcurl-x64.dll";
-	#elif defined(STW_PLATFORM_LINUX)
-		stw::runtime::find_library_path("libcurl.so", curlPath);
-	#elif defined(STW_PLATFORM_MAC)
-		//Not implemented yet
-		return false;
-	#endif
-	
-		if(curlPath.size() > 0)
-		{
-            if(curl::load_library(curlPath))
-            {
-                curl::global_init(CURL_GLOBAL_DEFAULT);
-                return true;
-            }
-		}
-
-		return false;
-    }
-
 	http_client::http_client()
 	{
         validateCertificate = true;
-        load_curl();
 	}
 
     void http_client::set_validate_certificate(bool validate)

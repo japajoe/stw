@@ -24,6 +24,9 @@ No linking is required with any libraries, but on Linux you must have these libr
 openssl req -newkey rsa:4096 -x509 -sha256 -days 3650 -nodes -out cert.pem -keyout key.pem
 ```
 
+# Getting started
+Before using the library make sure to call stw::load_library. See the demo for a http server and web socket client. 
+
 # Mixing HTML and C++
 Sure, the code highlighting isn't super great, and your code editor won't offer any code completion. On top of that, this abomination can be cumbersome to debug. That said, don't act like this isn't a cool feature!
 

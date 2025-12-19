@@ -21,6 +21,7 @@
 
 int main(int argc, char **argv)
 {
+	stw::load_library();
 	web_app app;
 	app.run();
 	return 0;

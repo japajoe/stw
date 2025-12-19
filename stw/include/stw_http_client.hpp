@@ -27,6 +27,11 @@
 
 namespace stw
 {
+	namespace curl
+	{
+		bool load_library();
+	}
+	
 	class http_client
 	{
 	public:
