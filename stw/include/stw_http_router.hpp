@@ -61,6 +61,20 @@ namespace stw
 
 			routes.push_back(r);
 		}
+		template <typename T>
+		void add(const std::regex &route) 
+		{
+            static_assert(std::is_base_of<http_controller, T>::value, "http_router::add parameter T must derive from http_controller");
+
+			http_route r = {
+				.regex = route,
+				.method = http_method_unknown,
+				.requestHandler = nullptr,
+				.controllerHandler = []() { return std::make_unique<T>(); }
+			};
+
+			routes.push_back(r);
+		}
 	private:
 		std::vector<http_route> routes;
 		http_route *get(const std::string &route);
