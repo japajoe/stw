@@ -27,7 +27,7 @@ web_socket_app::web_socket_app()
 		{
 			socket.send(stw::web_socket_opcode_close, nullptr, 0, true);
 			socket.close();
-			close(0);
+			exit(0);
 		}
 		if(n == SIGTERM)
 		{
