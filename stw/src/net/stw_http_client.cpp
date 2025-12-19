@@ -17,9 +17,9 @@
 // SOFTWARE.
 
 #include "stw_http_client.hpp"
-#include "stw_runtime.hpp"
-#include "stw_platform.hpp"
-#include "stw_string.hpp"
+#include "../core/stw_platform.hpp"
+#include "../system/stw_runtime.hpp"
+#include "../system/stw_string.hpp"
 #include <vector>
 #include <sstream>
 #include <cstring>

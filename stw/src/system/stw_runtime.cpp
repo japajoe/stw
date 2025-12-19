@@ -17,7 +17,7 @@
 // SOFTWARE.
 
 #include "stw_runtime.hpp"
-#include "stw_platform.hpp"
+#include "../core/stw_platform.hpp"
 
 #if defined(STW_PLATFORM_WINDOWS)
 	#include <windows.h>

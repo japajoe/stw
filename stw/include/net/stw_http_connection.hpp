@@ -22,7 +22,7 @@
 #include "stw_socket.hpp"
 #include "stw_ssl.hpp"
 #include "stw_http.hpp"
-#include "stw_stream.hpp"
+#include "../system/stw_stream.hpp"
 #include <cstdint>
 
 namespace stw

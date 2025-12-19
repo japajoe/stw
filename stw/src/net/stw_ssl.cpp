@@ -17,8 +17,8 @@
 // SOFTWARE.
 
 #include "stw_ssl.hpp"
-#include "stw_runtime.hpp"
-#include "stw_platform.hpp"
+#include "../core/stw_platform.hpp"
+#include "../system/stw_runtime.hpp"
 #include <stdexcept>
 #include <utility>
 #include <cstring>

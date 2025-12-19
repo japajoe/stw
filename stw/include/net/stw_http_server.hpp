@@ -23,7 +23,7 @@
 #include "stw_ssl.hpp"
 #include "stw_http.hpp"
 #include "stw_http_connection.hpp"
-#include "stw_thread_pool.hpp"
+#include "../system/stw_thread_pool.hpp"
 #include <string>
 #include <functional>
 #include <vector>

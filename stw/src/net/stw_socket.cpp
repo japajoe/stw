@@ -17,7 +17,7 @@
 // SOFTWARE.
 
 #include "stw_socket.hpp"
-#include "stw_string.hpp"
+#include "../system/stw_string.hpp"
 #include <cstring>
 #include <sstream>
 #include <atomic>

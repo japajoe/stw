@@ -17,7 +17,7 @@
 // SOFTWARE.
 
 #include "stw_http.hpp"
-#include "stw_string.hpp"
+#include "../system/stw_string.hpp"
 #include <cstring>
 #include <map>
 #include <filesystem>

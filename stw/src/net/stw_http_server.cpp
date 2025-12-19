@@ -17,9 +17,9 @@
 // SOFTWARE.
 
 #include "stw_http_server.hpp"
-#include "stw_ini_reader.hpp"
-#include "stw_directory.hpp"
-#include "stw_string.hpp"
+#include "../system/stw_ini_reader.hpp"
+#include "../system/stw_directory.hpp"
+#include "../system/stw_string.hpp"
 #include <algorithm>
 #include <iostream>
 #include <future>

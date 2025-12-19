@@ -17,10 +17,10 @@
 // SOFTWARE.
 
 #include "stw_templ.hpp"
-#include "stw_runtime.hpp"
-#include "stw_file.hpp"
-#include "stw_directory.hpp"
-#include "stw_string.hpp"
+#include "../system/stw_runtime.hpp"
+#include "../system/stw_file.hpp"
+#include "../system/stw_directory.hpp"
+#include "../system/stw_string.hpp"
 #include <string>
 #include <vector>
 #include <set>
