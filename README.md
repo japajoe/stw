@@ -133,7 +133,7 @@ int main()
 If successful, the generated files will be in the output directory. The class names will have the form `name_view.hpp`. You can now use these files in your project like so:
 
 ```cpp
-#include "stw/core/stw.hpp"
+#include "stw/stw.hpp"
 #include "stw/net/http_server.hpp"
 #include "index_view.html" //Assuming you have a class called index_view
 

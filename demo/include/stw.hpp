@@ -19,7 +19,7 @@
 #ifndef STW_HPP
 #define STW_HPP
 
-#include "../../stw/include/core/stw.hpp"
+#include "../../stw/include/stw.hpp"
 #include "../../stw/include/core/platform.hpp"
 #include "../../stw/include/net/http.hpp"
 #include "../../stw/include/net/http_server.hpp"
