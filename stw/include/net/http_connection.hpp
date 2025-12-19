@@ -19,10 +19,10 @@
 #ifndef STW_HTTP_CONNECTION_HPP
 #define STW_HTTP_CONNECTION_HPP
 
-#include "stw_socket.hpp"
-#include "stw_ssl.hpp"
-#include "stw_http.hpp"
-#include "../system/stw_stream.hpp"
+#include "socket.hpp"
+#include "ssl.hpp"
+#include "http.hpp"
+#include "../system/stream.hpp"
 #include <cstdint>
 
 namespace stw

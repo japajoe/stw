@@ -16,7 +16,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "stw_binary_stream.hpp"
+#include "binary_stream.hpp"
 #include <utility>
 #include <cstring>
 #include <algorithm>

@@ -16,9 +16,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "stw_ini_reader.hpp"
-#include "stw_string.hpp"
-#include "stw_file.hpp"
+#include "ini_reader.hpp"
+#include "string.hpp"
+#include "file.hpp"
 #include <vector>
 #include <stdexcept>
 #include <algorithm>

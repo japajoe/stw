@@ -16,8 +16,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "stw_file_cache.hpp"
-#include "stw_file.hpp"
+#include "file_cache.hpp"
+#include "file.hpp"
 #include <filesystem>
 
 namespace stw

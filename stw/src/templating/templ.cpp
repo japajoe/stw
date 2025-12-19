@@ -16,11 +16,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "stw_templ.hpp"
-#include "../system/stw_runtime.hpp"
-#include "../system/stw_file.hpp"
-#include "../system/stw_directory.hpp"
-#include "../system/stw_string.hpp"
+#include "templ.hpp"
+#include "../system/runtime.hpp"
+#include "../system/file.hpp"
+#include "../system/directory.hpp"
+#include "../system/string.hpp"
 #include <string>
 #include <vector>
 #include <set>

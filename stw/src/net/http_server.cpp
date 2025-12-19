@@ -16,10 +16,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "stw_http_server.hpp"
-#include "../system/stw_ini_reader.hpp"
-#include "../system/stw_directory.hpp"
-#include "../system/stw_string.hpp"
+#include "http_server.hpp"
+#include "../system/ini_reader.hpp"
+#include "../system/directory.hpp"
+#include "../system/string.hpp"
 #include <algorithm>
 #include <iostream>
 #include <future>

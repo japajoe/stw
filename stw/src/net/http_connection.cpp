@@ -16,7 +16,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "stw_http_connection.hpp"
+#include "http_connection.hpp"
 #include <utility>
 #include <sstream>
 

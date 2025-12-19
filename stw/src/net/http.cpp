@@ -16,8 +16,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "stw_http.hpp"
-#include "../system/stw_string.hpp"
+#include "http.hpp"
+#include "../system/string.hpp"
 #include <cstring>
 #include <map>
 #include <filesystem>

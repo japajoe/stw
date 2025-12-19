@@ -19,11 +19,11 @@
 #ifndef STW_HTTP_SERVER
 #define STW_HTTP_SERVER
 
-#include "stw_socket.hpp"
-#include "stw_ssl.hpp"
-#include "stw_http.hpp"
-#include "stw_http_connection.hpp"
-#include "../system/stw_thread_pool.hpp"
+#include "socket.hpp"
+#include "ssl.hpp"
+#include "http.hpp"
+#include "http_connection.hpp"
+#include "../system/thread_pool.hpp"
 #include <string>
 #include <functional>
 #include <vector>

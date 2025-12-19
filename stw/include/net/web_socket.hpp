@@ -19,9 +19,9 @@
 #ifndef SUGAR_WEB_SOCKET_HPP
 #define SUGAR_WEB_SOCKET_HPP
 
-#include "stw_socket.hpp"
-#include "stw_http.hpp"
-#include "stw_ssl.hpp"
+#include "socket.hpp"
+#include "http.hpp"
+#include "ssl.hpp"
 #include <string>
 #include <cstdint>
 #include <vector>

@@ -1,6 +1,6 @@
-#include "stw_stw.hpp"
-#include "../net/stw_http_client.hpp"
-#include "../net/stw_ssl.hpp"
+#include "stw.hpp"
+#include "../net/http_client.hpp"
+#include "../net/ssl.hpp"
 #include <iostream>
 
 namespace stw

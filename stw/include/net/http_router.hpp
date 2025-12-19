@@ -19,9 +19,9 @@
 #ifndef STW_HTTP_ROUTER_HPP
 #define STW_HTTP_ROUTER_HPP
 
-#include "stw_http.hpp"
-#include "stw_http_connection.hpp"
-#include "stw_http_controller.hpp"
+#include "http.hpp"
+#include "http_connection.hpp"
+#include "http_controller.hpp"
 #include <vector>
 #include <regex>
 #include <functional>

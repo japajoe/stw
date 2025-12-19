@@ -19,8 +19,8 @@
 #ifndef STW_HTTP_CONTROLLER_HPP
 #define STW_HTTP_CONTROLLER_HPP
 
-#include "stw_http_connection.hpp"
-#include "stw_http.hpp"
+#include "http_connection.hpp"
+#include "http.hpp"
 #include <sstream>
 #include <string>
 #include <unordered_map>

@@ -19,7 +19,7 @@
 #ifndef STW_SOCKET_HPP
 #define STW_SOCKET_HPP
 
-#include "../core/stw_platform.hpp"
+#include "../core/platform.hpp"
 
 #if defined(STW_PLATFORM_WINDOWS)
 	#ifdef _WIN32_WINNT

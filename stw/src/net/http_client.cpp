@@ -16,10 +16,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "stw_http_client.hpp"
-#include "../core/stw_platform.hpp"
-#include "../system/stw_runtime.hpp"
-#include "../system/stw_string.hpp"
+#include "http_client.hpp"
+#include "../core/platform.hpp"
+#include "../system/runtime.hpp"
+#include "../system/string.hpp"
 #include <vector>
 #include <sstream>
 #include <cstring>

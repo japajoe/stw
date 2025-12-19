@@ -16,8 +16,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "stw_socket.hpp"
-#include "../system/stw_string.hpp"
+#include "socket.hpp"
+#include "../system/string.hpp"
 #include <cstring>
 #include <sstream>
 #include <atomic>

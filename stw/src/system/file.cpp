@@ -16,8 +16,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "stw_file.hpp"
-#include "stw_date_time.hpp"
+#include "file.hpp"
+#include "date_time.hpp"
 #include <filesystem>
 #include <fstream>
 #include <sstream>

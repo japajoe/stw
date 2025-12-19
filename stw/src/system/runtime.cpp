@@ -16,8 +16,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "stw_runtime.hpp"
-#include "../core/stw_platform.hpp"
+#include "runtime.hpp"
+#include "../core/platform.hpp"
 
 #if defined(STW_PLATFORM_WINDOWS)
 	#include <windows.h>
