@@ -20,20 +20,21 @@
 #include "stw_platform.hpp"
 
 #if defined(STW_PLATFORM_WINDOWS)
-#include <windows.h>
+	#include <windows.h>
 #endif
 
 #if defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
-#include <dlfcn.h>
-#include <unistd.h>
-#include <limits.h>
-#include <sys/wait.h>
+	#include <dlfcn.h>
+	#include <unistd.h>
+	#include <limits.h>
+	#include <sys/wait.h>
 #endif
 
 #include <filesystem>
 #include <iostream>
 #include <cstring>
 #include <stdexcept>
+#include <memory>
 
 namespace stw::runtime
 {
@@ -185,110 +186,33 @@ namespace stw::runtime
 		return std::string(buffer);
 	}
 
-	bool run_command(const std::string &cmd, const std::string &args, std::string &output)
+	bool run_command(const std::string &cmd, const std::vector<std::string> &args, std::string &output)
 	{
-	#if defined(STW_PLATFORM_WINDOWS)
-		return false; // Not implemented for Windows
-	#elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
-		// Create a pipe for writing and reading
-		int pipe_in[2], pipe_out[2];
-
-		// Create pipes
-		if (pipe(pipe_in) == -1 || pipe(pipe_out) == -1)
+		//Source: https://gist.github.com/meritozh/f0351894a2a4aa92871746bf45879157
+		std::string command = cmd;
+#if defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
+		for(const auto &arg : args)
 		{
-			perror("pipe");
-			return false;
+			command += " " + arg;
 		}
 
-		pid_t pid = fork(); // Fork a child process
-		if (pid == -1)
+		command += " 2>&1"; // Add redirection to capture stderr
+
+		std::shared_ptr<FILE> pipe(popen(command.c_str(), "r"), pclose);
+		
+		if (!pipe) return 
+			false;
+		
+		char buffer[128];
+		
+		while (!feof(pipe.get())) 
 		{
-			perror("fork");
-			return false;
+			if (fgets(buffer, 128, pipe.get()) != NULL)
+				output += buffer;
 		}
-
-		if (pid == 0)
-		{ // Child process
-			// Close unused write end of input pipe
-			close(pipe_in[1]);
-			// Close unused read end of output pipe
-			close(pipe_out[0]);
-
-			// Redirect standard input from the reading end of the pipe
-			dup2(pipe_in[0], STDIN_FILENO);
-			// Redirect standard output to the writing end of the pipe
-			dup2(pipe_out[1], STDOUT_FILENO);
-
-			// Execute the command
-			execlp(cmd.c_str(), cmd.c_str(), nullptr);
-			perror("execlp failed"); // If execlp fails
-			_exit(1);				 // Exit child on failure
-		}
-		else
-		{ // Parent process
-			// Close unused ends
-			close(pipe_in[0]);
-			close(pipe_out[1]);
-
-			// Write to the process
-			write(pipe_in[1], args.c_str(), args.size());
-			close(pipe_in[1]); // Close the write end after sending input
-
-			// Read the output
-			char buffer[128];
-			ssize_t bytesRead;
-			while ((bytesRead = read(pipe_out[0], buffer, sizeof(buffer) - 1)) > 0)
-			{
-				buffer[bytesRead] = '\0'; // Null-terminate the buffer
-				output += buffer;		  // Append each output line
-			}
-
-			close(pipe_out[0]);		  // Close the read end
-			waitpid(pid, nullptr, 0); // Wait for the child process to finish
-			return true;
-		}
-	#else
-		return false; // Unsupported platform
-	#endif
+		return true;
+#else
+		return false;
+#endif
 	}
-
-	// bool run_command(const std::string &cmd, const std::string &args, std::string &output)
-	// {
-	// #if defined(STW_PLATFORM_WINDOWS)
-	// 	return false;
-	// #elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
-	// 	FILE* pipe = popen(cmd.c_str(), "r"); // Open in read mode
-
-	// 	if (!pipe)
-	// 	{
-	// 		std::cout << "popen() failed to start process\n";
-	// 		return false;
-	// 	}
-
-	// 	std::string echoCommand = "echo \"" + args + "\" | " + cmd;
-
-	// 	FILE* inputPipe = popen(echoCommand.c_str(), "r");
-
-	// 	if (!inputPipe)
-	// 	{
-	// 		pclose(pipe); // Close the read pipe
-	// 		std::cout << "Failed to execute command\n";
-	// 		return false;
-	// 	}
-
-	// 	// Read output
-	// 	char buffer[128];
-
-	// 	while (fgets(buffer, sizeof(buffer), inputPipe) != nullptr)
-	// 	{
-	// 		output += buffer; // Append the read output to the result
-	// 	}
-
-	// 	pclose(inputPipe); // Close the input pipe
-
-	// 	return true;
-	// #else
-	// 	return false;
-	// #endif
-	// }
 }
