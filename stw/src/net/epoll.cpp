@@ -34,7 +34,7 @@ namespace stw::epoll
 	{
 		return ::epoll_wait(epfd, events, maxEvents, timeOut);
 	}
-#elif defined(STW_PLATFORM_WINDOW)
+#elif defined(STW_PLATFORM_WINDOWS)
 /*
  * wepoll - epoll for Windows
  * https://github.com/piscisaureus/wepoll
