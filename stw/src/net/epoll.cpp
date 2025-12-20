@@ -223,6 +223,7 @@ X(NTSTATUS,                             \
 	PLARGE_INTEGER Timeout))             \
 										\
 X(ULONG, WINAPI, RtlNtStatusToDosError, (NTSTATUS Status))
+#undef X
 
 #define X(return_type, attributes, name, parameters) \
 WEPOLL_INTERNAL_EXTERN return_type(attributes *name) parameters;
