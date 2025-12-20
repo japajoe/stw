@@ -125,7 +125,7 @@ namespace stw
         this->protocolType = socket_protocol_type_tcp;
 
 		std::memset(&s, 0, sizeof(socket_t));
-		s.fd = -1;
+		s.fd = INVALID_SOCKET_HANDLE;
         s.addressFamily = address_family_af_inet;
 
 		load_winsock();
@@ -136,7 +136,7 @@ namespace stw
         this->protocolType = protocolType;
 
 		std::memset(&s, 0, sizeof(socket_t));
-		s.fd = -1;
+		s.fd = INVALID_SOCKET_HANDLE;
         s.addressFamily = address_family_af_inet;
 
 		load_winsock();
@@ -147,7 +147,7 @@ namespace stw
         this->protocolType = protocolType;
 
 		std::memset(&s, 0, sizeof(socket_t));
-		s.fd = -1;
+		s.fd = INVALID_SOCKET_HANDLE;
         s.addressFamily = address_family_af_inet;
 
         load_winsock();
@@ -183,7 +183,7 @@ namespace stw
 	socket::socket(socket &&other) noexcept
 	{
 		std::memcpy(&s, &other.s, sizeof(socket_t));
-		other.s.fd = -1;
+		other.s.fd = INVALID_SOCKET_HANDLE;
 		protocolType = other.protocolType;
 	}
 
@@ -192,7 +192,7 @@ namespace stw
 		if(this != &other)
 		{
 			std::memcpy(&s, &other.s, sizeof(socket_t));
-			other.s.fd = -1;
+			other.s.fd = INVALID_SOCKET_HANDLE;
 			protocolType = other.protocolType;
 		}
 		return *this;
@@ -406,7 +406,7 @@ namespace stw
             emptyBuffers();
             ::close(s.fd);
         #endif
-            s.fd = -1;
+            s.fd = INVALID_SOCKET_HANDLE;
         }
 	}
 
@@ -549,7 +549,7 @@ namespace stw
         return set_option(IPPROTO_TCP, TCP_NODELAY, &noDelayFlag, sizeof(int32_t));
     }
 
-	int32_t socket::get_file_descriptor() const
+	socket_handle socket::get_file_descriptor() const
 	{
 		return s.fd;
 	}

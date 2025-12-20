@@ -46,6 +46,14 @@
 
 namespace stw
 {
+#if defined(STW_PLATFORM_WINDOWS)
+	#define INVALID_SOCKET_HANDLE INVALID_SOCKET
+	typedef SOCKET socket_handle;
+#else
+	#define INVALID_SOCKET_HANDLE -1
+	typedef int32_t socket_handle;
+#endif
+
     enum address_family 
 	{
         address_family_af_inet = AF_INET,
@@ -70,7 +78,7 @@ namespace stw
 
     typedef struct 
 	{
-        int32_t fd;
+        socket_handle fd;
         socket_address_t address;
         address_family addressFamily;
     } socket_t;
@@ -106,7 +114,7 @@ namespace stw
 		bool set_timeout(uint32_t seconds);
 		bool set_blocking(bool block);
 		bool set_no_delay(bool noDelay);
-		int32_t get_file_descriptor() const;
+		socket_handle get_file_descriptor() const;
 		std::string get_ip() const;
 		static bool resolve(const std::string &uri, std::string &ip, uint16_t &port, std::string &hostname, bool forceIPv4);
 	private:
