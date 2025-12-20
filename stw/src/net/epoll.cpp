@@ -283,7 +283,7 @@ WEPOLL_INTERNAL int err_check_handle(HANDLE handle);
 #define IOCTL_AFD_POLL 0x00012024
 
 static UNICODE_STRING afd__device_name =
-	RTL_CONSTANT_STRING(L"\\Device\\Afd\\Wepoll");
+	RTL_CONSTANT_STRING((PWSTR)L"\\Device\\Afd\\Wepoll");
 
 static OBJECT_ATTRIBUTES afd__device_attributes =
 	RTL_CONSTANT_OBJECT_ATTRIBUTES(&afd__device_name, 0);
