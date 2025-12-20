@@ -1067,7 +1067,7 @@ typedef struct port_state
 
 static inline port_state_t *port__alloc(void)
 {
-	port_state_t *port_state = malloc(sizeof *port_state);
+	port_state_t *port_state = (port_state_t*)malloc(sizeof *port_state);
 	if (port_state == NULL)
 		return_set_error(NULL, ERROR_NOT_ENOUGH_MEMORY);
 
@@ -1280,7 +1280,7 @@ int port_wait(port_state_t *port_state,
 		iocp_events = stack_iocp_events;
 	}
 	else if ((iocp_events =
-					malloc((size_t)maxevents * sizeof *iocp_events)) == NULL)
+		(OVERLAPPED_ENTRY *)malloc((size_t)maxevents * sizeof *iocp_events)) == NULL)
 	{
 		iocp_events = stack_iocp_events;
 		maxevents = array_count(stack_iocp_events);
@@ -1680,7 +1680,7 @@ typedef struct sock_state
 
 static inline sock_state_t *sock__alloc(void)
 {
-	sock_state_t *sock_state = malloc(sizeof *sock_state);
+	sock_state_t *sock_state = (sock_state_t*)malloc(sizeof *sock_state);
 	if (sock_state == NULL)
 		return_set_error(NULL, ERROR_NOT_ENOUGH_MEMORY);
 	return sock_state;
