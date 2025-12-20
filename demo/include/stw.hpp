@@ -30,6 +30,8 @@
 #include "../../stw/include/net/socket.hpp"
 #include "../../stw/include/net/web_socket.hpp"
 #include "../../stw/include/net/http_router.hpp"
+#include "../../stw/include/system/concurrent_queue.hpp"
+#include "../../stw/include/system/queue.hpp"
 #include "../../stw/include/system/ini_reader.hpp"
 #include "../../stw/include/system/runtime.hpp"
 #include "../../stw/include/system/string.hpp"
