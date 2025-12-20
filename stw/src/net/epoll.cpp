@@ -872,8 +872,13 @@ typedef void *nt__fn_ptr_cast_t;
 typedef FARPROC nt__fn_ptr_cast_t;
 #endif
 
+// #define X(return_type, attributes, name, parameters) \
+// WEPOLL_INTERNAL return_type(attributes *name) parameters = NULL;
+// NT_NTDLL_IMPORT_LIST(X)
+// #undef X
+
 #define X(return_type, attributes, name, parameters) \
-WEPOLL_INTERNAL return_type(attributes *name) parameters = NULL;
+  extern return_type(attributes *name) parameters; // Use extern, remove = NULL
 NT_NTDLL_IMPORT_LIST(X)
 #undef X
 
