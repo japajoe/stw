@@ -627,7 +627,7 @@ namespace stw::epoll
 		return -1;
 	}
 
-	int32_t epoll_wait(HANDLE ephnd,
+	int32_t wait(HANDLE ephnd,
 						struct epoll_event *events,
 						int32_t maxevents,
 						int32_t timeout)

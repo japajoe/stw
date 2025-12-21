@@ -161,7 +161,7 @@ namespace stw
 
         s.fd = ::socket(static_cast<int>(s.addressFamily), protocolType == socket_protocol_type_tcp ? SOCK_STREAM : SOCK_DGRAM, 0);
 
-        if(s.fd < 0) 
+        if(s.fd == INVALID_SOCKET_HANDLE) 
             throw socket_exception("Failed to create socket");
 
         if(ipVersion == ip_version_ip_v4) 
@@ -207,7 +207,7 @@ namespace stw
 
 	bool socket::connect(const std::string &ip, uint16_t port)
 	{
-		if(s.fd >= 0)
+		if(s.fd >= INVALID_SOCKET_HANDLE)
 			return false;
 
 		ip_version ipVersion = detect_ip_version(ip);
@@ -219,7 +219,7 @@ namespace stw
 
         s.fd = ::socket(static_cast<int>(addressFamily), protocolType == socket_protocol_type_tcp ? SOCK_STREAM : SOCK_DGRAM, 0);
 
-        if(s.fd < 0) 
+        if(s.fd == INVALID_SOCKET_HANDLE) 
             return false;
 
         s.addressFamily = addressFamily;
@@ -245,7 +245,7 @@ namespace stw
 
         if(connectionResult < 0) 
 		{
-			std::cerr << "Socket creation failed: " << strerror(errno) << std::endl;
+			std::cout << "Socket creation failed: " << strerror(errno) << std::endl;
             close();
             return false;
         }
@@ -255,13 +255,13 @@ namespace stw
 
     bool socket::bind(const std::string &bindAddress, uint16_t port)
     {
-        if(s.fd < 0) 
+        if(s.fd == INVALID_SOCKET_HANDLE) 
         {
             int32_t newfd = ::socket(static_cast<int>(s.addressFamily), protocolType == socket_protocol_type_tcp ? SOCK_STREAM : SOCK_DGRAM, 0);
 
-            if(newfd < 0) 
+            if(newfd == INVALID_SOCKET_HANDLE) 
             {
-                std::cerr << "socket::bind: " << strerror(errno) << std::endl;
+                std::cout << "socket::bind: " << strerror(errno) << std::endl;
                 return false;
             }
             s.fd = newfd;
@@ -307,7 +307,7 @@ namespace stw
 
 	bool socket::listen(int32_t backlog)
 	{
-        if(s.fd < 0) 
+        if(s.fd == INVALID_SOCKET_HANDLE) 
             return false;
 
         int32_t result = ::listen(s.fd, backlog);
@@ -338,10 +338,10 @@ namespace stw
 		if(!target)
 			return false;
 
-        if(s.fd < 0) 
+        if(s.fd == INVALID_SOCKET_HANDLE) 
             return false;
 
-        if(target->s.fd >= 0) 
+        if(target->s.fd != INVALID_SOCKET_HANDLE) 
             return false;
 
         struct sockaddr_storage address;
@@ -356,7 +356,7 @@ namespace stw
         return false;
     #endif
         
-        if(target->s.fd < 0)
+        if(target->s.fd == INVALID_SOCKET_HANDLE)
             return false;
 
         if(address.ss_family == AF_INET) 
@@ -384,7 +384,7 @@ namespace stw
 
 	void socket::close()
 	{
-		if(s.fd >= 0) 
+		if(s.fd != INVALID_SOCKET_HANDLE) 
 		{
             auto emptyBuffers = [this] () {
                 std::vector<uint8_t> buffer(1024);
@@ -589,20 +589,20 @@ namespace stw
 
         if(!uri_get_scheme(uri, scheme)) 
 		{
-            std::cerr << "Failed to get scheme from URI\n";
+            std::cout << "Failed to get scheme from URI\n";
             return false;
         }
 
         if(!uri_get_host(uri, host)) 
 		{
-            std::cerr << "Failed to get host from URI\n";
+            std::cout << "Failed to get host from URI\n";
             return false;
         }
 
 
         if(!uri_get_path(uri, path)) 
 		{
-            std::cerr << "Failed to get path from URI\n";
+            std::cout << "Failed to get path from URI\n";
             return false;
         }        
 
@@ -640,7 +640,7 @@ namespace stw
         if (status != 0) 
 		{
 			std::string error = "getaddrinfo error: " + std::string(gai_strerror(status)) + "\n";
-            std::cerr << error;
+            std::cout << error;
             return false;
         }
 
