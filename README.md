@@ -115,12 +115,16 @@ To generate a header file from this template (or even multiple in a directory), 
 
 int main()
 {
-	const char *inputDirectory = "path/to/template_directory";
-	const char *outputDirectory = "path/to/output_directory";
+	stw::templ::config config = {
+		.inputDirectory = "../../web/website/www/templates",
+		.outputDirectory = "../../web/include/views",
+		.includeDirectory = "../../web/website/www/templates/include",
+		.outputFileExtension = "hpp"
+	};
 
 	try
 	{
-		stw::templ::create_templates(inputDirectory, outputDirectory, "hpp");
+		stw::templ::create_templates(config);
 	}
 	catch(const std::runtime_error &ex)
 	{

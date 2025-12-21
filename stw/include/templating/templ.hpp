@@ -19,11 +19,20 @@
 #ifndef STW_TEMPL_HPP
 #define STW_TEMPL_HPP
 
+#include <string>
+
 namespace stw::templ
 {
-	bool create_template(const char *filePath, const char *outputFilePath);
-	//outputFileExtension without leading period (.), pass nullptr to default to '.hpp'
-	void create_templates(const char *inputDirectory, const char *outputDirectory, const char *outputFileExtension = nullptr);
+	struct config
+	{
+		std::string inputDirectory;
+		std::string outputDirectory;
+		std::string includeDirectory;
+		std::string outputFileExtension; //Extension without leading period (.)
+	};
+
+	bool create_template(const std::string &filePath, const std::string &includePath, const std::string &outputFilePath);
+	void create_templates(const config &config);
 }
 
 #endif

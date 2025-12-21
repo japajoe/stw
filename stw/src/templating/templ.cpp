@@ -21,7 +21,6 @@
 #include "../system/file.hpp"
 #include "../system/directory.hpp"
 #include "../system/string.hpp"
-#include <string>
 #include <vector>
 #include <set>
 #include <cstdint>
@@ -160,16 +159,55 @@ ${INCLUDE_GUARD_END})";
 
 		oss << "WRITE_TO_OUTPUT(\"";
 
-		for (size_t i = 0; i < input.size(); i++)
+		for (unsigned char c : input) 
 		{
-			oss << std::dec << '\\' << 'x';
-			oss << std::hex << std::setw(2) << std::setfill('0') << (int)input[i];
+			oss << "\\x" << std::hex << std::setw(2) << std::setfill('0')
+				<< static_cast<int>(c);
 		}
+
 		oss << std::dec << "\", " << input.size() << ");\n";
 		output += oss.str();
 	}
 
-	static std::string extract_includes_and_remove(std::string &templateString)
+	static bool extract_include_tags_and_replace(std::string &templateString, const std::string &includePath)
+	{
+		std::regex includeRegex(R"(<include\s+path=["']([^"']+)["']\s*\/?>)", std::regex_constants::icase);
+		
+		std::smatch match;
+
+		// We search and replace iteratively
+		while (std::regex_search(templateString, match, includeRegex)) 
+		{
+			// match[0] is the full tag: <include path="filename.html">
+			// match[1] is the captured path: filename.html
+			std::string fullTag = match[0].str();
+			std::string filePath = match[1].str();
+
+			if(string::starts_with(filePath, "/"))
+				filePath = filePath.substr(1);
+
+			filePath = includePath + "/" + filePath;
+
+			if(!file::exists(filePath))
+			{
+				std::cout << "Include file not found at path: " << filePath << '\n';
+				return false;
+			}
+
+			std::string replacement = file::read_all_text(filePath);
+
+			// Replace the first occurrence of the tag with the file content
+			size_t pos = templateString.find(fullTag);
+			if (pos != std::string::npos) 
+			{
+				templateString.replace(pos, fullTag.length(), replacement);
+			}
+		}
+
+		return true;
+	}
+
+	static std::string extract_cpp_includes_and_remove(std::string &templateString)
 	{
 		// Regular expression to match the full #include directives (both <...> and "..." forms)
 		std::regex includeRegex(R"(\#include\s*(<[^>]+>|"[^"]+"))");
@@ -315,17 +353,25 @@ ${INCLUDE_GUARD_END})";
 		return output;
 	}
 
-	bool create_template(const char *filePath, const char *outputFilePath)
+	bool create_template(const std::string &filePath, const std::string &includePath, const std::string &outputFilePath)
 	{
-		if(!filePath)
-			throw std::runtime_error("The given file path is null");
+		if(filePath.size() == 0)
+			throw std::runtime_error("The given file path is empty");
 			
 		if (!file::exists(filePath))
-			throw std::runtime_error("The given file does not exist: " + std::string(filePath));
+			throw std::runtime_error("The given file does not exist: " + filePath);
 
 		std::string rawCode = file::read_all_text(filePath);
+
+		//First check if raw code has any <include file="somefile.html"> tags
+		//If tags are found, extract the path, and past file contents in place
+		if(!extract_include_tags_and_replace(rawCode, includePath))
+			return false;
+
+		//std::cout << rawCode << '\n';
+
 		std::string generatedCode = parse(rawCode);
-		std::string includes = extract_includes_and_remove(generatedCode);
+		std::string includes = extract_cpp_includes_and_remove(generatedCode);
 		std::string fileName = stw::file::get_name(filePath, false);
 		std::string className = stw::string::to_lower(fileName) + "_view";
 		std::string fileIdentifier = stw::string::to_upper(fileName + "_view");
@@ -353,7 +399,7 @@ ${INCLUDE_GUARD_END})";
 		};
 
 		// If no outputFilePath was given, we try to write the output to a newly created directory
-		if (outputFilePath == nullptr)
+		if (outputFilePath.size() == 0)
 		{
 			std::string directoryPath("templates");
 
@@ -370,28 +416,28 @@ ${INCLUDE_GUARD_END})";
 		}
 	}
 
-	void create_templates(const char *inputDirectory, const char *outputDirectory, const char *outputFileExtension)
+	void create_templates(const config &config)
 	{
-		if(!inputDirectory)
-			throw std::runtime_error("inputDirectory can not be null");
+		if(config.inputDirectory.size() == 0)
+			throw std::runtime_error("inputDirectory can not be empty");
 
-		if(!outputDirectory)
-			throw std::runtime_error("outputDirectory can not be null");
+		if(config.outputDirectory.size() == 0)
+			throw std::runtime_error("outputDirectory can not be empty");
 
-		auto files = stw::directory::get_files(inputDirectory);
+		auto files = stw::directory::get_files(config.inputDirectory);
 
 		if(files.size() == 0)
 			throw std::runtime_error("The input directory does not exist or has no files");
 
-		std::string extension = outputFileExtension ? std::string(outputFileExtension) : "hpp";
+		std::string extension = (config.outputFileExtension.size() > 0) ? config.outputFileExtension : "hpp";
 		
 		for(const auto &file : files)
 		{
-			std::string outputFile = std::string(outputDirectory) + "/" + stw::file::get_name(file, false) + "_view." + extension;
+			std::string outputFile = config.outputDirectory + "/" + stw::file::get_name(file, false) + "_view." + extension;
 			
 			try
 			{
-				create_template(file.c_str(), outputFile.c_str());
+				create_template(file, config.includeDirectory, outputFile);
 			}
 			catch(const std::runtime_error &ex)
 			{
