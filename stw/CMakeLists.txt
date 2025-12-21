@@ -28,9 +28,8 @@ include_directories(
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
-if(WIN32 OR PLATFORM_IS_WINDOWS)
+if(WIN32 OR MSVC OR PLATFORM_IS_WINDOWS)
     target_link_libraries(${PROJECT_NAME} PRIVATE -static ws2_32)
-	add_definitions(-DUNICODE -D_UNICODE)
 else()
     target_link_libraries(${PROJECT_NAME} PRIVATE -ldl pthread)
 endif()
