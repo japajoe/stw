@@ -52,16 +52,8 @@ namespace stw
 	struct http_response_info;
 }
 
-#define WRITE_TO_OUTPUT(str, len) m_responseInfo_.m_output_.append(str, len)
-
-#define echo(val)                                                              \
-	{                                                                          \
-		m_ss_ << val;                                                          \
-		if (!m_ss_.fail())                                                     \
-			m_responseInfo_.m_output_.append(m_ss_.str());                     \
-		m_ss_.clear();                                                         \
-		m_ss_.str("");                                                         \
-	}
+#define WRITE_TO_OUTPUT(str, len) m_ss_.write(str, len)
+#define echo(val) m_ss_ << val
 
 class ${CLASS_NAME}
 {
@@ -98,6 +90,7 @@ class ${CLASS_NAME}
 		
 		${GENERATED_CODE}
 
+		m_responseInfo_.m_output_ = m_ss_.str();
 		m_responseInfo_.m_contentType_ = "text/html";
 
 		return reinterpret_cast<stw::http_response_info*>(&m_responseInfo_);
