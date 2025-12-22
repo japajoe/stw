@@ -1,5 +1,5 @@
 # stw
-Small library for making web based applications.
+A library for making web based applications. Although it has quite some functionality, the most important piece is the `stw::socket` class. It can be used just by itself and doesn't rely on anything in this library.
 
 # Features
 - HTTP server.
