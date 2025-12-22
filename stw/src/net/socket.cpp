@@ -17,9 +17,10 @@
 // SOFTWARE.
 
 #include "socket.hpp"
-#include "../system/string.hpp"
+#include <cstdlib>
 #include <cstring>
 #include <sstream>
+#include <vector>
 #include <atomic>
 #include <regex>
 #include <exception>
@@ -27,6 +28,40 @@
 
 namespace stw
 {
+    static bool string_contains(const std::string &haystack, const std::string &needle) 
+	{
+        return haystack.find(needle) != std::string::npos;
+    }
+
+	static std::vector<std::string> string_split(const std::string& str, char separator, size_t maxParts = 0) 
+    {
+        std::vector<std::string> result;
+        size_t start = 0;
+        size_t end = 0;
+
+        while ((end = str.find(separator, start)) != std::string::npos) 
+        {
+            result.push_back(str.substr(start, end - start));
+            start = end + 1;
+
+            if (maxParts > 0 && result.size() >= maxParts - 1) 
+                break; // Stop if we have reached maximum parts
+        }
+        result.push_back(str.substr(start)); // Add the last part
+        return result;
+    }
+
+	static bool string_try_parse_uint16(const std::string &value, uint16_t &v)
+	{
+        std::stringstream ss(value);
+        ss >> v;
+
+        if (ss.fail() || !ss.eof())
+            return false;
+        
+        return true;
+	}
+
 	static bool uri_get_scheme(const std::string &uri, std::string &value) 
 	{
         std::regex schemeRegex(R"(([^:/?#]+):\/\/)");
@@ -94,7 +129,7 @@ namespace stw
 
     static void load_winsock()
     {
-    #if defined(STW_PLATFORM_WINDOWS)
+    #if defined(STW_SOCKET_PLATFORM_WINDOWS)
 		if(gSocketCount.load() == 0)
 		{
             WSADATA wsaData;
@@ -110,7 +145,7 @@ namespace stw
 
     static void unload_winsock()
     {
-    #if defined(STW_PLATFORM_WINDOWS)
+    #if defined(STW_SOCKET_PLATFORM_WINDOWS)
 		if(gSocketCount.load() == 1)
 		{
 			WSACleanup();
@@ -315,7 +350,7 @@ namespace stw
         return result == 0;
 	}
 
-#if defined(STW_PLATFORM_WINDOWS)
+#if defined(STW_SOCKET_PLATFORM_WINDOWS)
     const char* get_error_message(int errorCode) {
         switch (errorCode) {
             case WSAEWOULDBLOCK:
@@ -348,9 +383,9 @@ namespace stw
         std::memset(&address, 0, sizeof(address));
         uint32_t addressLength = sizeof(sockaddr_storage);
         
-    #if defined(STW_PLATFORM_WINDOWS)
+    #if defined(STW_SOCKET_PLATFORM_WINDOWS)
         target->s.fd = ::accept(s.fd,  (struct sockaddr*)&address, (int32_t*)&addressLength);
-    #elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
+    #elif defined(STW_SOCKET_PLATFORM_UNIX)
         target->s.fd = ::accept(s.fd,  (struct sockaddr*)&address, &addressLength);
     #elif
         return false;
@@ -397,11 +432,11 @@ namespace stw
             };
 
 
-        #if defined(STW_PLATFORM_WINDOWS)
+        #if defined(STW_SOCKET_PLATFORM_WINDOWS)
             ::shutdown(s.fd, SD_SEND);
             emptyBuffers();
             closesocket(s.fd);
-        #elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
+        #elif defined(STW_SOCKET_PLATFORM_UNIX)
             ::shutdown(s.fd, SHUT_WR);
             emptyBuffers();
             ::close(s.fd);
@@ -413,9 +448,9 @@ namespace stw
 	int64_t socket::read(void *buffer, size_t size)
 	{
 		int64_t n = 0;
-	#if defined(STW_PLATFORM_WINDOWS)
+	#if defined(STW_SOCKET_PLATFORM_WINDOWS)
 		n = ::recv(s.fd, (char*)buffer, size, 0);
-	#elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
+	#elif defined(STW_SOCKET_PLATFORM_UNIX)
 		n = ::recv(s.fd, buffer, size, 0);
 	#endif
 		return n;
@@ -424,9 +459,9 @@ namespace stw
 	int64_t socket::peek(void *buffer, size_t size)
 	{
 		int64_t n = 0;
-	#if defined(STW_PLATFORM_WINDOWS)
+	#if defined(STW_SOCKET_PLATFORM_WINDOWS)
 		n = ::recv(s.fd, (char*)buffer, size, MSG_PEEK);
-	#elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
+	#elif defined(STW_SOCKET_PLATFORM_UNIX)
 		n = ::recv(s.fd, buffer, size, MSG_PEEK);
 	#endif
 		return n;
@@ -435,9 +470,9 @@ namespace stw
 	int64_t socket::write(const void *buffer, size_t size)
 	{
 		int64_t n = 0;
-	#if defined(STW_PLATFORM_WINDOWS)
+	#if defined(STW_SOCKET_PLATFORM_WINDOWS)
 		n = ::send(s.fd, (char*)buffer, size, 0);
-	#elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
+	#elif defined(STW_SOCKET_PLATFORM_UNIX)
 		n = ::send(s.fd, buffer, size, 0);
 	#endif
 		return n;
@@ -497,9 +532,9 @@ namespace stw
 
 	bool socket::set_option(int32_t level, int32_t option, const void *value, uint32_t valueSize)
 	{
-    #if defined(STW_PLATFORM_WINDOWS)
+    #if defined(STW_SOCKET_PLATFORM_WINDOWS)
         return setsockopt(s.fd, level, option, (char*)value, valueSize) != 0 ? false : true;
-    #elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
+    #elif defined(STW_SOCKET_PLATFORM_UNIX)
         return setsockopt(s.fd, level, option, value, valueSize) != 0 ? false : true;
     #else
         return false;
@@ -508,10 +543,10 @@ namespace stw
 
     bool socket::set_timeout(uint32_t seconds)
     {
-    #if defined(STW_PLATFORM_WINDOWS)
+    #if defined(STW_SOCKET_PLATFORM_WINDOWS)
         DWORD timeout = seconds * 1000; // Convert to milliseconds
         return setsockopt(s.fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) != 0 ? false : true;
-    #elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
+    #elif defined(STW_SOCKET_PLATFORM_UNIX)
         struct timeval timeout;
         timeout.tv_sec = seconds;
         timeout.tv_usec = 0;
@@ -523,12 +558,12 @@ namespace stw
 
     bool socket::set_blocking(bool block)
     {
-    #if defined(STW_PLATFORM_WINDOWS)
+    #if defined(STW_SOCKET_PLATFORM_WINDOWS)
         u_long mode = block ? 0 : 1; // 1 to enable non-blocking socket
         if (ioctlsocket(s.fd, FIONBIO, &mode) != 0)
             return false;
         return true;
-    #elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
+    #elif defined(STW_SOCKET_PLATFORM_UNIX)
         int flags = fcntl(s.fd, F_GETFL, 0);
         if (flags == -1) return -1; // Error handling
 
@@ -606,9 +641,9 @@ namespace stw
             return false;
         }        
 
-        if(string::contains(host, ":")) 
+        if(string_contains(host, ":")) 
 		{
-            auto parts = string::split(host, ':');
+            auto parts = string_split(host, ':');
 
             if(parts.size() != 2)
                 return false;
@@ -616,7 +651,7 @@ namespace stw
             //Get rid of the :port part in the host
             host = parts[0];
 
-            if(!string::try_parse_uint16(parts[1], port))
+            if(!string_try_parse_uint16(parts[1], port))
                 return false;
         } 
 		else 

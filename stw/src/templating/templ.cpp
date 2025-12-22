@@ -85,13 +85,16 @@ class ${CLASS_NAME}
 		if(!requestInfo)
 			throw std::runtime_error("${CLASS_NAME}::get requestInfo can not be null");
 
-		this->m_requestInfo_ = reinterpret_cast<const http_request_info*>(requestInfo);
-		this->m_userData_ = userData;
+		m_requestInfo_ = reinterpret_cast<const http_request_info*>(requestInfo);
+		m_userData_ = userData;
 		
 		${GENERATED_CODE}
 
 		m_responseInfo_.m_output_ = m_ss_.str();
 		m_responseInfo_.m_contentType_ = "text/html";
+
+		m_ss_.str("");
+		m_ss_.clear();
 
 		return reinterpret_cast<stw::http_response_info*>(&m_responseInfo_);
 	}

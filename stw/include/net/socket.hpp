@@ -19,9 +19,15 @@
 #ifndef STW_SOCKET_HPP
 #define STW_SOCKET_HPP
 
-#include "../core/platform.hpp"
+#if defined(_WIN32)
+	#define STW_SOCKET_PLATFORM_WINDOWS
+#endif
 
-#if defined(STW_PLATFORM_WINDOWS)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__APPLE__)
+	#define STW_SOCKET_PLATFORM_UNIX
+#endif
+
+#if defined(STW_SOCKET_PLATFORM_WINDOWS)
 	#ifdef _WIN32_WINNT
 	#undef _WIN32_WINNT
 	#endif
@@ -30,7 +36,7 @@
 	#include <ws2tcpip.h>
 #endif
 
-#if defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
+#if defined(STW_SOCKET_PLATFORM_UNIX)
 	#include <sys/socket.h>
 	#include <sys/types.h>
 	#include <netinet/in.h>
@@ -46,7 +52,7 @@
 
 namespace stw
 {
-#if defined(STW_PLATFORM_WINDOWS)
+#if defined(STW_SOCKET_PLATFORM_WINDOWS)
 	#define INVALID_SOCKET_HANDLE INVALID_SOCKET
 	typedef SOCKET socket_handle;
 #else
