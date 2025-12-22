@@ -25,6 +25,7 @@
 #include "../../stw/include/net/http_server.hpp"
 #include "../../stw/include/net/http_controller.hpp"
 #include "../../stw/include/net/http_client.hpp"
+#include "../../stw/include/net/http_config.hpp"
 #include "../../stw/include/net/http_connection.hpp"
 #include "../../stw/include/net/ssl.hpp"
 #include "../../stw/include/net/socket.hpp"

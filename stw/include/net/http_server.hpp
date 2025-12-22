@@ -23,6 +23,7 @@
 #include "ssl.hpp"
 #include "http.hpp"
 #include "http_connection.hpp"
+#include "http_config.hpp"
 #include "../system/thread_pool.hpp"
 #include <string>
 #include <functional>
@@ -31,22 +32,6 @@
 
 namespace stw
 {
-    struct http_server_configuration 
-	{
-        uint16_t portHttp;
-        uint16_t portHttps;
-        uint32_t maxHeaderSize;
-        std::string bindAddress;
-        std::string certificatePath;
-        std::string privateKeyPath;
-		std::string publicHtmlPath;
-		std::string privateHtmlPath;
-        std::string hostName;
-        bool useHttpsForwarding;
-        void load_default();
-		bool load_from_file(const std::string &filePath);
-    };
-
 	using http_request_handler = std::function<void(http_connection *connection, const http_request_info &request)>;
 
 	class http_server
@@ -55,12 +40,12 @@ namespace stw
 		http_request_handler onRequest;
 		http_server();
 		~http_server();
-		void run(http_server_configuration &config);
+		void run(const http_config &config);
 		void stop();
 	private:
 		std::vector<socket> listeners;
 		ssl_context sslContext;
-		http_server_configuration config;
+		http_config config;
 		std::atomic<bool> quit;
 		thread_pool threadPool;
 		void accept_http();
