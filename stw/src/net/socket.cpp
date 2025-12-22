@@ -125,35 +125,29 @@ namespace stw
 		std::string message_;
 	};
 
+#if defined(STW_SOCKET_PLATFORM_WINDOWS)
 	static std::atomic<int32_t> gSocketCount = 0;
 
     static void load_winsock()
     {
-    #if defined(STW_SOCKET_PLATFORM_WINDOWS)
 		if(gSocketCount.load() == 0)
 		{
             WSADATA wsaData;
             if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) 
-            {
                 throw socket_exception("Failed to initialize winsock");
-            }
 		}
-    #endif
-
 		gSocketCount.store(gSocketCount.load() + 1);        
     }
 
     static void unload_winsock()
     {
-    #if defined(STW_SOCKET_PLATFORM_WINDOWS)
 		if(gSocketCount.load() == 1)
 		{
 			WSACleanup();
 		}
-    #endif
-
 		gSocketCount.store(gSocketCount.load() - 1);
     }
+#endif
 
     socket::socket()
     {
@@ -163,7 +157,9 @@ namespace stw
 		s.fd = INVALID_SOCKET_HANDLE;
         s.addressFamily = address_family_af_inet;
 
+	#if defined(STW_SOCKET_PLATFORM_WINDOWS)
 		load_winsock();
+	#endif
     }
 
 	socket::socket(socket_protocol_type protocolType)
@@ -174,7 +170,9 @@ namespace stw
 		s.fd = INVALID_SOCKET_HANDLE;
         s.addressFamily = address_family_af_inet;
 
+	#if defined(STW_SOCKET_PLATFORM_WINDOWS)
 		load_winsock();
+	#endif
 	}
 
     socket::socket(socket_protocol_type protocolType, const std::string &ip, uint16_t port)
@@ -185,7 +183,9 @@ namespace stw
 		s.fd = INVALID_SOCKET_HANDLE;
         s.addressFamily = address_family_af_inet;
 
-        load_winsock();
+	#if defined(STW_SOCKET_PLATFORM_WINDOWS)
+		load_winsock();
+	#endif
 
 		ip_version ipVersion = detect_ip_version(ip);
 
@@ -236,8 +236,9 @@ namespace stw
 	socket::~socket()
 	{
 		close();
-
-        unload_winsock();
+	#if defined(STW_SOCKET_PLATFORM_WINDOWS)
+		unload_winsock();
+	#endif
 	}
 
 	bool socket::connect(const std::string &ip, uint16_t port)
