@@ -17,6 +17,9 @@ A library for making web based applications. Although it has quite some function
 - libssl (libssl-3-x64.dll)
 - libcrypto (libcrypto-3-x64.dll)
 
+# Requirements for Mac
+- Work in progress, but the `stw::socket` class does work on Mac as it is.
+
 No linking is required with any libraries, but on Linux you must have these libraries somewhere in your system path. On Windows you must place the dll files in the same directory as the executable. MacOS is not fully supported (yet).
 
 # Generating certificate with openssl
