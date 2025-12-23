@@ -3,7 +3,12 @@
 #include <vector>
 
 #if defined(_WIN32) || defined(_WIN64)
+	#ifdef _WIN32_WINNT
+	#undef _WIN32_WINNT
+	#endif
+	#define _WIN32_WINNT 0x0600
 	#include <winsock2.h>
+	#include <ws2tcpip.h>
 #elif defined(__APPLE__) || defined(__FreeBSD__)
 	#include <sys/types.h>
 	#include <sys/event.h>
