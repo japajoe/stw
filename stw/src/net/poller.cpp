@@ -138,7 +138,7 @@ namespace stw
 	};
 
 	// --- WINDOWS (WSAPoll) ---
-#elif defined(_WIN32) || definef(_WIN64)
+#elif defined(_WIN32) || defined(_WIN64)
 	class wsa_poller : public poller
 	{
 		std::vector<WSAPOLLFD> poll_fds;
