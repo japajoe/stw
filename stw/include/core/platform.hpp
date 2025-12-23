@@ -19,7 +19,7 @@
 #ifndef STW_PLATFORM_HPP
 #define STW_PLATFORM_HPP
 
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(_WIN64)
 	#define STW_PLATFORM_WINDOWS
 #endif
 

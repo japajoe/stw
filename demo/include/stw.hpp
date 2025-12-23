@@ -28,6 +28,7 @@
 #include "../../stw/include/net/http_config.hpp"
 #include "../../stw/include/net/http_connection.hpp"
 #include "../../stw/include/net/ssl.hpp"
+#include "../../stw/include/net/poller.hpp"
 #include "../../stw/include/net/socket.hpp"
 #include "../../stw/include/net/web_socket.hpp"
 #include "../../stw/include/net/http_router.hpp"

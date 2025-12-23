@@ -382,10 +382,10 @@ namespace stw
 
         struct sockaddr_storage address;
         std::memset(&address, 0, sizeof(address));
-        uint32_t addressLength = sizeof(sockaddr_storage);
+		stw_socklen_t addressLength = sizeof(sockaddr_storage);
         
     #if defined(STW_SOCKET_PLATFORM_WINDOWS)
-        target->s.fd = ::accept(s.fd,  (struct sockaddr*)&address, (int32_t*)&addressLength);
+        target->s.fd = ::accept(s.fd,  (struct sockaddr*)&address, &addressLength);
     #elif defined(STW_SOCKET_PLATFORM_UNIX)
         target->s.fd = ::accept(s.fd,  (struct sockaddr*)&address, &addressLength);
     #elif

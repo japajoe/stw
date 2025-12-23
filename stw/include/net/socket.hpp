@@ -19,7 +19,7 @@
 #ifndef STW_SOCKET_HPP
 #define STW_SOCKET_HPP
 
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(_WIN64)
 	#define STW_SOCKET_PLATFORM_WINDOWS
 #endif
 
@@ -45,6 +45,7 @@
 	#include <unistd.h>
 	#include <netdb.h>
 	#include <fcntl.h>
+	#include <errno.h>
 #endif
 
 #include <cstdint>
@@ -55,9 +56,17 @@ namespace stw
 #if defined(STW_SOCKET_PLATFORM_WINDOWS)
 	#define INVALID_SOCKET_HANDLE INVALID_SOCKET
 	typedef SOCKET socket_handle;
+    #define STW_SOCKET_ERR WSAGetLastError()
+    #define STW_EWOULDBLOCK WSAEWOULDBLOCK
+    #define STW_EAGAIN WSAEWOULDBLOCK // Windows doesn't really have EAGAIN
+	typedef int32_t stw_socklen_t;
 #else
 	#define INVALID_SOCKET_HANDLE -1
 	typedef int32_t socket_handle;
+    #define STW_SOCKET_ERR errno
+    #define STW_EWOULDBLOCK EWOULDBLOCK
+    #define STW_EAGAIN EAGAIN
+	typedef socklen_t stw_socklen_t;
 #endif
 
     enum address_family 
