@@ -11,7 +11,7 @@
 
 namespace stw::experimental
 {
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
     web_server::web_server()
     {
         isRunning.store(false);

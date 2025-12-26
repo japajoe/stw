@@ -22,7 +22,7 @@
 
 namespace stw::experimental
 {
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
     struct http_context
     {
         std::shared_ptr<stw::socket> connection;
