@@ -48,6 +48,7 @@ namespace stw
 	public:
 		linux_poller()
 		{
+			revents.resize(1024);
 			epollFD = epoll_create1(0);
 			// EFD_NONBLOCK ensures the read/write doesn't hang the worker
 			notifyFD = eventfd(0, EFD_NONBLOCK);
@@ -93,10 +94,8 @@ namespace stw
 
 		int32_t wait(std::vector<poll_event_result> &results, int32_t timeout)
 		{
-			struct epoll_event revents[64];
-			int nfds = epoll_wait(epollFD, revents, 64, timeout);
+			int nfds = epoll_wait(epollFD, revents.data(), revents.size(), timeout);
 			
-			results.clear();
 			for (int32_t i = 0; i < nfds; ++i) 
 			{
 				if (revents[i].data.fd == notifyFD) 
@@ -124,6 +123,7 @@ namespace stw
 	private:
 		int32_t epollFD;
 		int32_t notifyFD;
+		std::vector<struct epoll_event> revents;
 		std::mutex mtx;
 
 		bool ctl(int32_t op, int32_t fd, uint32_t flags) 

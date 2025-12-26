@@ -123,7 +123,7 @@ namespace stw::experimental
     void web_server::network_loop(worker_context *worker)
     {
         std::vector<stw::poll_event_result> activeEvents;
-        activeEvents.reserve(64);
+        activeEvents.reserve(1024);
 
         while (!worker->stopFlag.load())
         {
