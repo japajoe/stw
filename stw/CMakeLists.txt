@@ -21,6 +21,7 @@ file(GLOB_RECURSE SOURCES src/*.cpp src/*.c)
 include_directories(
     "${PROJECT_SOURCE_DIR}/include/"
 	"${PROJECT_SOURCE_DIR}/include/core"
+	"${PROJECT_SOURCE_DIR}/include/experimental"
 	"${PROJECT_SOURCE_DIR}/include/net"
 	"${PROJECT_SOURCE_DIR}/include/system"
 	"${PROJECT_SOURCE_DIR}/include/templating"

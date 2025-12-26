@@ -124,6 +124,22 @@ namespace stw::string
 		return ret;
 	}
 
+	bool compare(const std::string &str1, const std::string &str2, bool ignoreCase)
+	{
+		if(!ignoreCase)
+			return str1 == str2;
+			
+		if (str1.length() != str2.length())
+			return false;
+
+		for (size_t i = 0; i < str1.length(); ++i) 
+		{
+			if (std::tolower(static_cast<unsigned char>(str1[i])) != std::tolower(static_cast<unsigned char>(str2[i])))
+				return false;
+		}
+		return true; // All characters matched
+	}
+
     bool contains(const std::string &haystack, const std::string &needle) 
 	{
         return haystack.find(needle) != std::string::npos;
