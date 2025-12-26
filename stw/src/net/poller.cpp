@@ -33,6 +33,7 @@
 	#include <sys/event.h>
 	#include <sys/time.h>
 	#include <unistd.h>
+	#include <unordered_map>
 #else // Linux
 	#include <sys/epoll.h>
 	#include <unistd.h>
@@ -43,10 +44,10 @@ namespace stw
 {
 	// --- LINUX (epoll) ---
 #if defined(__linux__)
-	class linux_poller : public poller
+	class epoll_poller : public poller
 	{
 	public:
-		linux_poller()
+		epoll_poller()
 		{
 			revents.resize(1024);
 			epollFD = epoll_create1(0);
@@ -60,7 +61,7 @@ namespace stw
 			epoll_ctl(epollFD, EPOLL_CTL_ADD, notifyFD, &ev);
 		}
 
-		~linux_poller()
+		~epoll_poller()
 		{
 			if (notifyFD != -1) close(notifyFD);
         	if (epollFD != -1) close(epollFD);
@@ -138,19 +139,142 @@ namespace stw
 			return epoll_ctl(epollFD, op, fd, &ev) == 0;
 		}
 	};
+#elif defined(__APPLE__) || defined(__FreeBSD__)
+	class kqueue_poller : public poller
+	{
+	public:
+		kqueue_poller()
+		{
+			events.resize(1024);
+			kqueueFD = kqueue();
+		}
+
+		~kqueue_poller()
+		{
+			if (kqueueFD != -1) 
+				close(kqueueFD);
+		}
+
+		bool add(int fd, poll_event_flag flags) override
+		{
+			std::lock_guard<std::mutex> lock(mtx);
+			return ctl(fd, flags, EV_ADD | EV_ENABLE);
+		}
+
+		bool modify(int32_t fd, poll_event_flag flags) override 
+		{
+			std::lock_guard<std::mutex> lock(mtx);
+			// In kqueue, EV_ADD on an existing filter updates it.
+			// However, we must explicitly delete filters no longer in use to match epoll.
+			return ctl(fd, flags, EV_ADD | EV_ENABLE);
+		}
+
+		bool remove(int32_t fd) override
+		{
+			std::lock_guard<std::mutex> lock(mtx);
+			struct kevent kev[2];
+			// We delete both potential filters. We use the FD as the ident.
+			EV_SET(&kev[0], fd, EVFILT_READ, EV_DELETE, 0, 0, nullptr);
+			EV_SET(&kev[1], fd, EVFILT_WRITE, EV_DELETE, 0, 0, nullptr);
+			
+			// We don't check return here because if one filter wasn't registered, 
+			// kqueue returns an error, which we can safely ignore during removal.
+			kevent(kqueueFD, kev, 2, nullptr, 0, nullptr);
+			return true;
+		}
+
+		void notify()
+		{
+			struct kevent kev;
+			// Ident 0, User filter. This is the kqueue equivalent of eventfd.
+			EV_SET(&kev, 0, EVFILT_USER, 0, NOTE_TRIGGER, 0, nullptr);
+			kevent(kqueueFD, &kev, 1, nullptr, 0, nullptr);
+		}
+
+		int32_t wait(std::vector<poll_event_result> &results, int32_t timeout_ms)
+		{
+			struct timespec ts;
+			ts.tv_sec = timeout_ms / 1000;
+			ts.tv_nsec = (timeout_ms % 1000) * 1000000;
+
+			
+			int32_t n = kevent(kqueueFD, nullptr, 0, events.data(), events.size(), timeout_ms >= 0 ? &ts : nullptr);
+
+			// Map to merge separate Read/Write kqueue events into one result per FD
+			// to match epoll's "one result, multiple flags" behavior.
+			fd_to_idx.clear();
+
+			for (int i = 0; i < n; ++i)
+			{
+				if (events[i].filter == EVFILT_USER) continue;
+
+				int32_t fd = static_cast<int32_t>(events[i].ident);
+				
+				if (fd_to_idx.find(fd) != fd_to_idx.end()) 
+				{
+					// Already saw this FD in this batch (e.g., we got the WRITE event after the READ)
+					auto& res = results[fd_to_idx[fd]];
+					map_flags(events[i], res);
+				} 
+				else 
+				{
+					poll_event_result res = { fd, 0 };
+					map_flags(events[i], res);
+					fd_to_idx[fd] = results.size();
+					results.push_back(res);
+				}
+			}
+			return static_cast<int32_t>(results.size());
+		}
+
+	private:
+		int32_t kqueueFD;
+		std::vector<struct kevent> events;
+		std::unordered_map<int32_t, size_t> fd_to_idx;
+		std::mutex mtx;
+
+		void map_flags(const struct kevent& ev, poll_event_result& res)
+		{
+			if (ev.filter == EVFILT_READ)  res.flags |= poll_event_read;
+			if (ev.filter == EVFILT_WRITE) res.flags |= poll_event_write;
+			if (ev.flags & EV_ERROR)        res.flags |= poll_event_error;
+			if (ev.flags & EV_EOF)          res.flags |= poll_event_disconnect;
+		}
+
+		bool ctl(int32_t fd, uint32_t flags, uint16_t action) 
+		{
+			struct kevent kev[2];
+			int32_t n = 0;
+
+			// Kqueue requires separate filters for Read and Write.
+			// To match epoll_ctl(MOD), we must ADD the ones we want and DELETE the ones we don't.
+			
+			if (flags & poll_event_read)
+				EV_SET(&kev[n++], fd, EVFILT_READ, action, 0, 0, nullptr);
+			else
+				EV_SET(&kev[n++], fd, EVFILT_READ, EV_DELETE, 0, 0, nullptr);
+
+			if (flags & poll_event_write)
+				EV_SET(&kev[n++], fd, EVFILT_WRITE, action, 0, 0, nullptr);
+			else
+				EV_SET(&kev[n++], fd, EVFILT_WRITE, EV_DELETE, 0, 0, nullptr);
+			
+			return kevent(kqueueFD, kev, n, nullptr, 0, nullptr) != -1;
+		}
+	};
 #endif
 
 	// --- Factory ---
 	std::unique_ptr<poller> poller::create()
 	{
 #if defined(__linux__)
-		return std::make_unique<linux_poller>();
+		return std::make_unique<epoll_poller>();
 #elif defined(__APPLE__) || defined(__FreeBSD__)
-		std::runtime_error("stw::poller for Mac and FreeBSD not yet implemented");
+		return std::make_unique<kqueue_poller>();
 #elif defined(_WIN32) || defined(_WIN64)
-		std::runtime_error("stw::poller for Windows not yet implemented");
+		throw std::runtime_error("stw::poller for Windows not yet implemented");
 #else
-		std::runtime_error("stw::poller for unknown platform not implemented");
+		throw std::runtime_error("stw::poller for unknown platform not implemented");
 #endif
 	}
 }
