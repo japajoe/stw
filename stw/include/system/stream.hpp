@@ -72,7 +72,7 @@ namespace stw
 	class memory_stream : public stream
 	{
 	public:
-		memory_stream(void *memory, size_t size, bool copyMemory = false);
+		memory_stream(void *memory, size_t size, bool copyMemory);
 		~memory_stream();
 		int64_t read(void *buffer, size_t size) override;
 		int64_t write(const void *buffer, size_t size) override;
