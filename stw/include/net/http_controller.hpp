@@ -31,16 +31,16 @@ namespace stw
 	{
 	public:
 		virtual ~http_controller() = default;
-		virtual void on_get(http_connection *connection, const http_request_info &request);
-		virtual void on_post(http_connection *connection, const http_request_info &request);
-		virtual void on_put(http_connection *connection, const http_request_info &request);
-		virtual void on_patch(http_connection *connection, const http_request_info &request);
-		virtual void on_delete(http_connection *connection, const http_request_info &request);
-		virtual void on_head(http_connection *connection, const http_request_info &request);
-		virtual void on_options(http_connection *connection, const http_request_info &request);
-		virtual void on_trace(http_connection *connection, const http_request_info &request);
-		virtual void on_connect(http_connection *connection, const http_request_info &request);
-		virtual void on_unknown_method(http_connection *connection, const http_request_info &request);
+		virtual void on_get(http_connection *connection, const http_request &request);
+		virtual void on_post(http_connection *connection, const http_request &request);
+		virtual void on_put(http_connection *connection, const http_request &request);
+		virtual void on_patch(http_connection *connection, const http_request &request);
+		virtual void on_delete(http_connection *connection, const http_request &request);
+		virtual void on_head(http_connection *connection, const http_request &request);
+		virtual void on_options(http_connection *connection, const http_request &request);
+		virtual void on_trace(http_connection *connection, const http_request &request);
+		virtual void on_connect(http_connection *connection, const http_request &request);
+		virtual void on_unknown_method(http_connection *connection, const http_request &request);
 	};
 }
 

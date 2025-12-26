@@ -222,12 +222,15 @@ namespace stw
 			return;
 		}
 
-		http_headers headers;
-		std::string method;
-		std::string path;
-		uint64_t contentLength;
+		// http_headers headers;
+		// std::string method;
+		// std::string path;
+		// uint64_t contentLength;
 
-		if(!parse_request_header(headerText, headers, method, path, contentLength))
+		http_request request;
+
+		//if(!parse_request_header(headerText, headers, method, path, contentLength))
+		if(http_request::parse(headerText, request))
 		{
 			connection->write_response(http_status_code_bad_request);
 			connection->close();
@@ -237,13 +240,13 @@ namespace stw
 
 		if(!connection->is_secure() && config.portHttps > 0 && config.useHttpsForwarding)
 		{
-			if(headers.contains("Upgrade-Insecure-Requests"))
+			if(request.headers.contains("Upgrade-Insecure-Requests"))
 			{
-				const auto &upgrade = headers["Upgrade-Insecure-Requests"];
+				const auto &upgrade = request.headers["Upgrade-Insecure-Requests"];
 				if(upgrade == "1")
 				{
 					http_headers responseHeaders;
-					responseHeaders["Location"] = "https://" + config.hostName + ":" + std::to_string(config.portHttps) + path;
+					responseHeaders["Location"] = "https://" + config.hostName + ":" + std::to_string(config.portHttps) + request.path;
 					responseHeaders["Connection"] = "close";
 					connection->write_response(http_status_code_moved_permanently, &responseHeaders);
 					connection->close();
@@ -255,16 +258,7 @@ namespace stw
 
 		if(onRequest)
 		{
-			http_method httpMethod = string_to_http_method(method);
-
-			http_request_info request = {
-				.path = path,
-				.ip = connection->get_ip(),
-				.headers = headers,
-				.method = httpMethod,
-				.contentLength = contentLength
-			};
-
+			request.ip = connection->get_ip();
 			onRequest(connection, request);
 		}
 		else

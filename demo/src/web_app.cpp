@@ -44,12 +44,12 @@ void web_app::run()
 		return;
 
 	// This regex matches to "/" or "/index" and is case insensitive
-	router.add(stw::http_method_get, std::regex("^/$|^/index$", std::regex_constants::icase), [&] (stw::http_connection *c, const stw::http_request_info &r) {
+	router.add(stw::http_method_get, std::regex("^/$|^/index$", std::regex_constants::icase), [&] (stw::http_connection *c, const stw::http_request &r) {
 		std::string filePath = config.publicHtmlPath + "/index.html";
 		send_file_content(c, stw::http_status_code_ok, filePath);
 	});
 
-	router.add(stw::http_method_post, "/api/v1/test", [&] (stw::http_connection *c, const stw::http_request_info &r) {
+	router.add(stw::http_method_post, "/api/v1/test", [&] (stw::http_connection *c, const stw::http_request &r) {
 		if(r.contentLength > 0)
 		{
 			std::string requestText;
@@ -62,16 +62,16 @@ void web_app::run()
 		c->write_response(stw::http_status_code_ok);
 	});
 
-	server.onRequest = [this] (stw::http_connection *c, const stw::http_request_info &r) {
+	server.onRequest = [this] (stw::http_connection *c, const stw::http_request &r) {
 		on_request(c, r);
 	};
 
 	server.run(config);
 }
 
-void web_app::on_request(stw::http_connection *connection, const stw::http_request_info &request)
+void web_app::on_request(stw::http_connection *connection, const stw::http_request &request)
 {
-	std::cout << connection->get_ip() << " [" << stw::http_method_to_string(request.method) << "]: " << request.path << "\n";
+	std::cout << connection->get_ip() << " [" << stw::http_request::get_string_from_http_method(request.method) << "]: " << request.path << "\n";
 
 	if(!router.process_request(request.path, connection, request))
 	{

@@ -49,7 +49,7 @@ namespace stw
 		return nullptr;
 	}
 
-	bool http_router::process_request(const std::string &route, stw::http_connection *connection, const stw::http_request_info &request)
+	bool http_router::process_request(const std::string &route, stw::http_connection *connection, const stw::http_request &request)
 	{
 		auto r = get(route);
 

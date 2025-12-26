@@ -20,52 +20,52 @@
 
 namespace stw
 {
-	void http_controller::on_get(http_connection *connection, const http_request_info &request)
+	void http_controller::on_get(http_connection *connection, const http_request &request)
 	{
 		connection->write_response(http_status_code_method_not_allowed);
 	}
 
-	void http_controller::on_post(http_connection *connection, const http_request_info &request)
+	void http_controller::on_post(http_connection *connection, const http_request &request)
 	{
 		connection->write_response(http_status_code_method_not_allowed);
 	}
 
-	void http_controller::on_put(http_connection *connection, const http_request_info &request)
+	void http_controller::on_put(http_connection *connection, const http_request &request)
 	{
 		connection->write_response(http_status_code_method_not_allowed);
 	}
 
-	void http_controller::on_patch(http_connection *connection, const http_request_info &request)
+	void http_controller::on_patch(http_connection *connection, const http_request &request)
 	{
 		connection->write_response(http_status_code_method_not_allowed);
 	}
 
-	void http_controller::on_delete(http_connection *connection, const http_request_info &request)
+	void http_controller::on_delete(http_connection *connection, const http_request &request)
 	{
 		connection->write_response(http_status_code_method_not_allowed);
 	}
 
-	void http_controller::on_head(http_connection *connection, const http_request_info &request)
+	void http_controller::on_head(http_connection *connection, const http_request &request)
 	{
 		connection->write_response(http_status_code_method_not_allowed);
 	}
 
-	void http_controller::on_options(http_connection *connection, const http_request_info &request)
+	void http_controller::on_options(http_connection *connection, const http_request &request)
 	{
 		connection->write_response(http_status_code_method_not_allowed);
 	}
 
-	void http_controller::on_trace(http_connection *connection, const http_request_info &request)
+	void http_controller::on_trace(http_connection *connection, const http_request &request)
 	{
 		connection->write_response(http_status_code_method_not_allowed);
 	}
 
-	void http_controller::on_connect(http_connection *connection, const http_request_info &request)
+	void http_controller::on_connect(http_connection *connection, const http_request &request)
 	{
 		connection->write_response(http_status_code_method_not_allowed);
 	}
 
-	void http_controller::on_unknown_method(http_connection *connection, const http_request_info &request)
+	void http_controller::on_unknown_method(http_connection *connection, const http_request &request)
 	{
 		connection->write_response(http_status_code_not_implemented);
 	}

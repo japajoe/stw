@@ -22,6 +22,8 @@
 #include <string>
 #include <cstdint>
 #include <unordered_map>
+#include <memory>
+#include "../system/stream.hpp"
 
 namespace stw
 {
@@ -123,8 +125,29 @@ namespace stw
 		std::string contentType;
 	};
 
-    std::string http_method_to_string(http_method m);
-    http_method string_to_http_method(const std::string &str);
+	struct http_request
+	{
+		http_method method;
+		std::string path;
+		std::string httpVersion;
+		std::string ip;
+		uint64_t contentLength;
+		http_headers headers;
+		http_request();
+		static bool parse(const std::string &requestBody, http_request &request);
+		static http_method get_http_method_from_string(const std::string &method);
+		static std::string get_string_from_http_method(http_method method);
+	};
+
+	struct http_response
+	{
+		uint32_t statusCode;
+		std::string contentType;
+		http_headers headers;
+		std::shared_ptr<stw::stream> content;
+		http_response();
+	};
+
     std::string get_http_content_type(const std::string &filePath);
 }
 

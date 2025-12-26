@@ -154,7 +154,7 @@ int main()
 	if(!config.load_from_file("config.ini"))
 		return 1;
 
-	server.onRequest = [this] (stw::http_connection *connection, const stw::http_request_info &request) {
+	server.onRequest = [this] (stw::http_connection *connection, const stw::http_request &request) {
 		if(request.path == "/index")
 		{
 			index_view view;

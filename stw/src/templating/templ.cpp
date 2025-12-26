@@ -58,9 +58,25 @@ namespace stw
 class ${CLASS_NAME}
 {
   private:
-	struct http_request_info {
+	enum http_method {
+		http_method_get,
+		http_method_post,
+		http_method_put,
+		http_method_patch,
+		http_method_delete,
+		http_method_head,
+		http_method_options,
+		http_method_trace,
+		http_method_connect,
+		http_method_unknown
+	};
+
+	struct http_request {
+		http_method m_method_;
 		std::string m_path_;
+		std::string m_httpVersion_;
 		std::string m_ip_;
+		uint64_t m_contentLength_;
 		std::unordered_map<std::string, std::string> m_headers_;
 	};
 
@@ -70,7 +86,7 @@ class ${CLASS_NAME}
 		std::string m_contentType_;
 	};
 
-	const http_request_info *m_requestInfo_;
+	const http_request *m_requestInfo_;
 	http_response_info m_responseInfo_;
 	void *m_userData_;
 	std::stringstream m_ss_;
@@ -80,12 +96,12 @@ class ${CLASS_NAME}
 		m_requestInfo_ = nullptr;
 		m_userData_ = nullptr;
 	}
-	stw::http_response_info *get(const stw::http_request_info *requestInfo, void *userData = nullptr)
+	stw::http_response_info *get(const stw::http_request *requestInfo, void *userData = nullptr)
 	{
 		if(!requestInfo)
 			throw std::runtime_error("${CLASS_NAME}::get requestInfo can not be null");
 
-		m_requestInfo_ = reinterpret_cast<const http_request_info*>(requestInfo);
+		m_requestInfo_ = reinterpret_cast<const http_request*>(requestInfo);
 		m_userData_ = userData;
 		
 		${GENERATED_CODE}

@@ -30,7 +30,7 @@
 
 namespace stw
 {
-	using http_request_handler = std::function<void(stw::http_connection *connection, const stw::http_request_info &request)>;
+	using http_request_handler = std::function<void(stw::http_connection *connection, const stw::http_request &request)>;
 	using http_controller_handler = std::function<std::unique_ptr<http_controller>()>;
 
 	struct http_route
@@ -44,7 +44,7 @@ namespace stw
 	class http_router
 	{
 	public:
-		bool process_request(const std::string &route, stw::http_connection *connection, const stw::http_request_info &request);
+		bool process_request(const std::string &route, stw::http_connection *connection, const stw::http_request &request);
 		void add(http_method method, const std::string &route, http_request_handler handler);
 		void add(http_method method, const std::regex &route, http_request_handler handler);
 		template <typename T>

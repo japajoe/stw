@@ -31,7 +31,7 @@ private:
 	stw::http_config config;
 	stw::file_cache fileCache;
 	stw::http_router router;
-	void on_request(stw::http_connection *connection, const stw::http_request_info &request);
+	void on_request(stw::http_connection *connection, const stw::http_request &request);
 	void send_file_content(stw::http_connection *connection, uint32_t statusCode, const std::string &filePath);
 };
 

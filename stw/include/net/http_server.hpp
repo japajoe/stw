@@ -32,7 +32,7 @@
 
 namespace stw
 {
-	using http_request_handler = std::function<void(http_connection *connection, const http_request_info &request)>;
+	using http_request_handler = std::function<void(http_connection *connection, const http_request &request)>;
 
 	class http_server
 	{
