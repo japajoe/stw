@@ -1,12 +1,31 @@
+// MIT License
+// Copyright © 2025 W.M.R Jap-A-Joe
+
+// Permission is hereby granted, free of charge, to any person obtaining a copy of
+// this software and associated documentation files (the "Software"), to deal in
+// the Software without restriction, including without limitation the rights to
+// use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+// of the Software, and to permit persons to whom the Software is furnished to do
+// so.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
 #include "poller.hpp"
 #include <algorithm>
 #include <vector>
+#include <mutex>
 
 #if defined(_WIN32) || defined(_WIN64)
 	#ifdef _WIN32_WINNT
 	#undef _WIN32_WINNT
-	#endif
-	#define _WIN32_WINNT 0x0600
+#endif
+#define _WIN32_WINNT 0x0600
 	#include <winsock2.h>
 	#include <ws2tcpip.h>
 #elif defined(__APPLE__) || defined(__FreeBSD__)
@@ -17,203 +36,106 @@
 #else // Linux
 	#include <sys/epoll.h>
 	#include <unistd.h>
+	#include <sys/eventfd.h>
 #endif
 
 namespace stw
 {
 	// --- LINUX (epoll) ---
 #if defined(__linux__)
-	class epoll_poller : public poller
+	class linux_poller : public poller
 	{
-		int epoll_fd;
-
 	public:
-		epoll_poller() { epoll_fd = epoll_create1(0); }
-		~epoll_poller()
+		linux_poller()
 		{
-			if (epoll_fd >= 0)
-				close(epoll_fd);
+			epollFD = epoll_create1(0);
+			// EFD_NONBLOCK ensures the read/write doesn't hang the worker
+			notifyFD = eventfd(0, EFD_NONBLOCK);
+
+			// Internal registration of the notifyFD so it can wake up wait()
+			struct epoll_event ev;
+			ev.data.fd = notifyFD;
+			ev.events = EPOLLIN; // Level-triggered is fine for the interruptor
+			epoll_ctl(epollFD, EPOLL_CTL_ADD, notifyFD, &ev);
 		}
 
-		bool add(int fd, uint32_t events) override
+		~linux_poller()
 		{
-			struct epoll_event ev = {0};
-			if (events & (uint32_t)poll_event::read)
-				ev.events |= EPOLLIN;
-			if (events & (uint32_t)poll_event::write)
-				ev.events |= EPOLLOUT;
-			ev.data.fd = fd;
-			return epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev) == 0;
+			if (notifyFD != -1) close(notifyFD);
+        	if (epollFD != -1) close(epollFD);
 		}
 
-		bool modify(int fd, uint32_t events) override
+		bool add(int fd, poll_event_flag flags) override
 		{
-			struct epoll_event ev = {0};
-			if (events & (uint32_t)poll_event::read)
-				ev.events |= EPOLLIN;
-			if (events & (uint32_t)poll_event::write)
-				ev.events |= EPOLLOUT;
-			ev.data.fd = fd;
-			return epoll_ctl(epoll_fd, EPOLL_CTL_MOD, fd, &ev) == 0;
+			std::lock_guard<std::mutex> lock(mtx);
+			return ctl(EPOLL_CTL_ADD, fd, flags);
 		}
 
-		bool remove(int fd) override
+		bool modify(int32_t fd, poll_event_flag flags) override 
 		{
-			return epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, nullptr) == 0;
+			std::lock_guard<std::mutex> lock(mtx);
+			return ctl(EPOLL_CTL_MOD, fd, flags);
 		}
 
-		int wait(std::vector<poll_event_result> &results, int timeOut) override
+		bool remove(int32_t fd) override
 		{
-			int batchSize = results.capacity() > 0 ? results.capacity() : 64;
-			auto raw = std::make_unique<struct epoll_event[]>(batchSize);
-			int n = epoll_wait(epoll_fd, raw.get(), batchSize, timeOut);
-			for (int i = 0; i < n; ++i)
+			std::lock_guard<std::mutex> lock(mtx);
+			return epoll_ctl(epollFD, EPOLL_CTL_DEL, fd, nullptr) == 0;
+		}
+
+		// Trigger the poller to wake up from wait()
+		void notify()
+		{
+			uint64_t signal = 1;
+			// Writing to eventfd increments its internal counter and wakes epoll
+			write(notifyFD, &signal, sizeof(signal));
+		}
+
+		int32_t wait(std::vector<poll_event_result> &results, int32_t timeout)
+		{
+			struct epoll_event revents[64];
+			int nfds = epoll_wait(epollFD, revents, 64, timeout);
+			
+			results.clear();
+			for (int32_t i = 0; i < nfds; ++i) 
 			{
-				uint32_t res = 0;
-				if (raw[i].events & EPOLLIN)
-					res |= (uint32_t)poll_event::read;
-				if (raw[i].events & EPOLLOUT)
-					res |= (uint32_t)poll_event::write;
-				if (raw[i].events & (EPOLLERR | EPOLLHUP))
-					res |= (uint32_t)poll_event::error;
-				results.push_back({raw[i].data.fd, res});
-			}
-			return n;
-		}
-	};
-
-	// --- MAC/BSD (kqueue) ---
-#elif defined(__APPLE__) || defined(__FreeBSD__)
-	class kqueue_poller : public poller
-	{
-		int kq;
-
-	public:
-		kqueue_poller() { kq = kqueue(); }
-		~kqueue_poller()
-		{
-			if (kq >= 0)
-				close(kq);
-		}
-
-		bool add(int fd, uint32_t events) override
-		{
-			struct kevent kev[2];
-			int n = 0;
-			if (events & (uint32_t)poll_event::read)
-				EV_SET(&kev[n++], fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, (void *)(intptr_t)fd);
-			if (events & (uint32_t)poll_event::write)
-				EV_SET(&kev[n++], fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, (void *)(intptr_t)fd);
-			return kevent(kq, kev, n, NULL, 0, NULL) != -1;
-		}
-
-		bool modify(int fd, uint32_t events) override
-		{
-			remove(fd); // kqueue modification is often cleanest as remove/add
-			return add(fd, events);
-		}
-
-		bool remove(int fd) override
-		{
-			struct kevent kev[2];
-			EV_SET(&kev[0], fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-			EV_SET(&kev[1], fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
-			return kevent(kq, kev, 2, NULL, 0, NULL) != -1;
-		}
-
-		int wait(std::vector<poll_event_result> &results, int timeout_ms) override
-		{
-			int batchSize = results.capacity() > 0 ? results.capacity() : 64;
-			auto raw = std::make_unique<struct kevent[]>(batchSize);
-			struct timespec ts = {timeout_ms / 1000, (timeout_ms % 1000) * 1000000};
-			int n = kevent(kq, NULL, 0, raw.get(), batchSize, &ts);
-			for (int i = 0; i < n; ++i)
-			{
-				uint32_t res = 0;
-				if (raw[i].filter == EVFILT_READ)
-					res |= (uint32_t)poll_event::read;
-				if (raw[i].filter == EVFILT_WRITE)
-					res |= (uint32_t)poll_event::write;
-				if (raw[i].flags & EV_EOF)
-					res |= (uint32_t)poll_event::error;
-				results.push_back({(int)(intptr_t)raw[i].udata, res});
-			}
-			return n;
-		}
-	};
-
-	// --- WINDOWS (WSAPoll) ---
-#elif defined(_WIN32) || defined(_WIN64)
-	class wsa_poller : public poller
-	{
-		std::vector<WSAPOLLFD> poll_fds;
-
-	public:
-		bool add(int fd, uint32_t events) override
-		{
-			WSAPOLLFD pfd = {0};
-			pfd.fd = (SOCKET)fd;
-			if (events & (uint32_t)poll_event::read)
-				pfd.events |= POLLRDNORM;
-			if (events & (uint32_t)poll_event::write)
-				pfd.events |= POLLWRNORM;
-			poll_fds.push_back(pfd);
-			return true;
-		}
-
-		bool modify(int fd, uint32_t events) override
-		{
-			for (auto &pfd : poll_fds)
-			{
-				if (pfd.fd == (SOCKET)fd)
+				if (revents[i].data.fd == notifyFD) 
 				{
-					pfd.events = 0;
-					if (events & (uint32_t)poll_event::read)
-						pfd.events |= POLLRDNORM;
-					if (events & (uint32_t)poll_event::write)
-						pfd.events |= POLLWRNORM;
-					return true;
+					// Drain the eventfd notification
+					uint64_t dummy;
+					read(notifyFD, &dummy, sizeof(dummy));
+					continue; 
 				}
+
+				poll_event_result res;
+				res.fd = revents[i].data.fd;
+				res.flags = 0;
+
+				if (revents[i].events & EPOLLIN)  res.flags |= poll_event_read;
+				if (revents[i].events & EPOLLOUT) res.flags |= poll_event_write;
+				if (revents[i].events & EPOLLERR) res.flags |= poll_event_error;
+				if (revents[i].events & EPOLLHUP) res.flags |= poll_event_disconnect;
+
+				results.push_back(res);
 			}
-			return false;
+			return static_cast<int32_t>(results.size());
 		}
 
-		bool remove(int fd) override
-		{
-			auto it = std::remove_if(poll_fds.begin(), poll_fds.end(),
-									[fd](const WSAPOLLFD &pfd)
-									{ return pfd.fd == (SOCKET)fd; });
-			if (it != poll_fds.end())
-			{
-				poll_fds.erase(it, poll_fds.end());
-				return true;
-			}
-			return false;
-		}
+	private:
+		int32_t epollFD;
+		int32_t notifyFD;
+		std::mutex mtx;
 
-		int wait(std::vector<poll_event_result> &results, int timeout_ms) override
+		bool ctl(int32_t op, int32_t fd, uint32_t flags) 
 		{
-			if (poll_fds.empty())
-				return 0;
-			int n = WSAPoll(poll_fds.data(), (ULONG)poll_fds.size(), timeout_ms);
-			if (n > 0)
-			{
-				for (auto &pfd : poll_fds)
-				{
-					if (pfd.revents != 0)
-					{
-						uint32_t res = 0;
-						if (pfd.revents & POLLRDNORM)
-							res |= (uint32_t)poll_event::read;
-						if (pfd.revents & POLLWRNORM)
-							res |= (uint32_t)poll_event::write;
-						if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))
-							res |= (uint32_t)poll_event::error;
-						results.push_back({(int)pfd.fd, res});
-					}
-				}
-			}
-			return n;
+			struct epoll_event ev;
+			ev.data.fd = fd;
+			ev.events = 0;  // Level triggered
+			
+			if (flags & poll_event_read)  ev.events |= EPOLLIN;
+			if (flags & poll_event_write) ev.events |= EPOLLOUT;
+			
+			return epoll_ctl(epollFD, op, fd, &ev) == 0;
 		}
 	};
 #endif
@@ -221,12 +143,14 @@ namespace stw
 	// --- Factory ---
 	std::unique_ptr<poller> poller::create()
 	{
-	#if defined(__linux__)
-		return std::make_unique<epoll_poller>();
-	#elif defined(__APPLE__) || defined(__FreeBSD__)
-		return std::make_unique<kqueue_poller>();
-	#elif defined(_WIN32) || defined(_WIN64)
-		return std::make_unique<wsa_poller>();
-	#endif
+#if defined(__linux__)
+		return std::make_unique<linux_poller>();
+#elif defined(__APPLE__) || defined(__FreeBSD__)
+		std::runtime_error("stw::poller for Mac and FreeBSD not yet implemented");
+#elif defined(_WIN32) || defined(_WIN64)
+		std::runtime_error("stw::poller for Windows not yet implemented");
+#else
+		std::runtime_error("stw::poller for unknown platform not implemented");
+#endif
 	}
 }

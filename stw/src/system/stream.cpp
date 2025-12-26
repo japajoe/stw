@@ -113,17 +113,49 @@ namespace stw
 			return readPosition;
 	}
 
+	int64_t file_stream::get_read_offset()
+	{
+		return readPosition;
+	}
+
 	file_stream::~file_stream()
 	{
 		if (file.is_open())
 			file.close();
 	}
 
-	memory_stream::memory_stream(void *memory, size_t size)
+	memory_stream::memory_stream(void *memory, size_t size, bool copyMemory)
 	{
-		this->memory = memory;
+		if(memory == nullptr)
+			throw std::runtime_error("Memory can not be null");
+		
+		if(size == 0)
+			throw std::runtime_error("Size can not be 0");
+
+		this->copyMemory = copyMemory;
 		this->size = size;
 		length = size;
+
+		if(!copyMemory)
+		{
+			this->memory = memory;
+		}
+		else
+		{
+			this->memory = std::malloc(size);
+			std::memcpy(this->memory, memory, size);
+		}
+	}
+
+	memory_stream::~memory_stream()
+	{
+		if(copyMemory)
+		{
+			if(memory != nullptr)
+			{
+				std::free(memory);
+			}
+		}
 	}
 
 	int64_t memory_stream::read(void *buffer, size_t bytesToRead)
@@ -190,5 +222,10 @@ namespace stw
 		readPosition = writePosition = newPos;
 
 		return newPos;
+	}
+
+	int64_t memory_stream::get_read_offset()
+	{
+		return readPosition;
 	}
 }

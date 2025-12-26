@@ -47,6 +47,7 @@ namespace stw
 		virtual int64_t read(void *buffer, size_t size) = 0;
 		virtual int64_t write(const void *buffer, size_t size) = 0;
 		virtual int64_t seek(int64_t offset, seek_origin origin) = 0;
+		virtual int64_t get_read_offset() = 0;
 		int64_t get_length() const { return length; }
 	protected:
 		int64_t readPosition = 0;
@@ -62,6 +63,7 @@ namespace stw
 		int64_t read(void *buffer, size_t size) override;
 		int64_t write(const void *buffer, size_t size) override;
 		int64_t seek(int64_t offset, seek_origin origin) override;
+		int64_t get_read_offset() override;
 	private:
 		file_access access;
 		std::fstream file;
@@ -70,13 +72,16 @@ namespace stw
 	class memory_stream : public stream
 	{
 	public:
-		memory_stream(void *memory, size_t size);
+		memory_stream(void *memory, size_t size, bool copyMemory = false);
+		~memory_stream();
 		int64_t read(void *buffer, size_t size) override;
 		int64_t write(const void *buffer, size_t size) override;
 		int64_t seek(int64_t offset, seek_origin origin) override;
+		int64_t get_read_offset() override;
 	private:
 		void *memory;
 		size_t size;
+		bool copyMemory;
 	};
 }
 
