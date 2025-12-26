@@ -75,6 +75,55 @@ namespace stw::string
         return numBytes == 0; // Ensure all characters were complete
     }
 
+	std::string url_decode(const std::string &str) 
+	{
+		std::string ret;
+		char ch;
+		int i, ii;
+		
+		for (i = 0; i < str.length(); i++) 
+		{
+			if (str[i] == '%') 
+			{
+				// Check if there are at least two characters following '%'
+				if (i + 2 < str.length()) 
+				{
+					// Convert the hex string to an integer
+					std::istringstream hexStream(str.substr(i + 1, 2));
+					if (hexStream >> std::hex >> ii) 
+					{
+						if (ii == 0) 
+							throw std::runtime_error("Null byte detected");
+
+						ch = static_cast<char>(ii);
+						ret += ch;
+						i += 2; // Skip the two hex digits
+					} 
+					else 
+					{
+						// Invalid hex sequence; treat as literal or throw error
+						ret += str[i];
+					}
+				} 
+				else 
+				{
+					// '%' at the end of string with no digits
+					ret += str[i];
+				}
+			} 
+			else if (str[i] == '+') 
+			{
+				// In URLs, '+' often represents a space
+				ret += ' ';
+			} 
+			else 
+			{
+				ret += str[i];
+			}
+		}
+		return ret;
+	}
+
     bool contains(const std::string &haystack, const std::string &needle) 
 	{
         return haystack.find(needle) != std::string::npos;

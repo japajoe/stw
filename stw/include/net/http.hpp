@@ -22,50 +22,10 @@
 #include <string>
 #include <cstdint>
 #include <unordered_map>
-#include <functional>
 
 namespace stw
 {
 	using http_headers = std::unordered_map<std::string,std::string>;
-
-    class http_request
-    {
-    public:
-        http_request();
-        ~http_request();
-        void set_url(const std::string &url);
-        std::string get_url() const;
-        void set_content(void *data, uint64_t size, bool copyData = false);
-        uint8_t *get_content() const;
-        uint64_t get_content_length() const;
-        void set_content_type(const std::string &contentType);
-        std::string get_content_type() const;
-        void set_header(const std::string &key, const std::string &value);
-        http_headers get_headers() const;
-    private:
-        std::string url;
-        uint8_t *content;        
-        uint64_t contentLength;
-        std::string contentType;
-        http_headers header;
-        bool ownsData;
-    };
-    
-    class http_client;
-
-    class http_response
-    {
-    friend class http_client;
-    public:
-        http_response();
-        int get_status_code() const;
-        uint64_t get_content_length() const;
-        http_headers &get_headers();
-    private:
-        int32_t statusCode;
-        uint64_t contentLength;
-        http_headers header;
-    };
 
     enum http_header_error 
     {
@@ -162,8 +122,6 @@ namespace stw
 		std::string content;
 		std::string contentType;
 	};
-
-    using http_response_callback = std::function<void(const void *data,size_t size)>;
 
     std::string http_method_to_string(http_method m);
     http_method string_to_http_method(const std::string &str);

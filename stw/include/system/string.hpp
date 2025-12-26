@@ -26,6 +26,7 @@
 namespace stw::string
 {
 	bool is_valid_utf8(const void *data, size_t size);
+	std::string url_decode(const std::string &str);
 	bool contains(const std::string &haystack, const std::string &needle);
 	bool starts_with(const std::string &haystack, const std::string &needle);
 	bool ends_with(const std::string &haystack, const std::string &needle);

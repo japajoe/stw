@@ -19,6 +19,7 @@
 #include "http_connection.hpp"
 #include <utility>
 #include <sstream>
+#include <vector>
 
 namespace stw
 {

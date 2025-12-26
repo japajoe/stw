@@ -18,119 +18,12 @@
 
 #include "http.hpp"
 #include "../system/string.hpp"
-#include <cstring>
 #include <map>
 #include <filesystem>
 #include <algorithm>
 
 namespace stw
 {
-    http_request::http_request()
-    {
-        content = nullptr;
-        contentLength = 0;
-        contentType = "text/plain";
-        ownsData = false;
-    }
-
-    http_request::~http_request()
-    {
-        if(content && ownsData)
-        {
-            delete[] content;
-        }
-    }
-
-    void http_request::set_url(const std::string &url)
-    {
-        this->url = url;
-    }
-
-    std::string http_request::get_url() const
-    {   
-        return url;
-    }
-
-    void http_request::set_content(void *data, uint64_t size, bool copyData)
-    {
-        if(!data || size == 0)
-            return;
-
-        if(content && ownsData)
-        {
-            delete[] content;
-            content = nullptr;
-            contentLength = 0;
-        }
-
-        ownsData = copyData;
-        contentLength = size;
-
-        if(ownsData)
-        {
-            content = new uint8_t[size];
-            std::memcpy(content, data, size);
-        }
-        else
-        {
-            content = reinterpret_cast<uint8_t*>(data);
-            contentLength = size;
-        }
-
-        return;
-    }
-
-    uint8_t *http_request::get_content() const
-    {
-        return content;
-    }
-
-    uint64_t http_request::get_content_length() const
-    {
-        return contentLength;
-    }
-
-    void http_request::set_content_type(const std::string &contentType)
-    {
-        this->contentType = contentType;
-    }
-
-    std::string http_request::get_content_type() const
-    {
-        return contentType;
-    }
-
-    void http_request::set_header(const std::string &key, const std::string &value)
-    {
-        header[key] = value;
-    }
-
-    http_headers http_request::get_headers() const
-    {
-        return header;
-    }
-
-    http_response::http_response()
-    {
-        statusCode = 0;
-        contentLength = 0;
-    }
-
-    int http_response::get_status_code() const
-    {
-        return statusCode;
-    }
-    
-    uint64_t http_response::get_content_length() const
-    {
-        return contentLength;
-    }
-
-    http_headers &http_response::get_headers()
-    {
-        return header;
-    }
-
     std::string http_method_to_string(http_method m)
     {
         switch(m)

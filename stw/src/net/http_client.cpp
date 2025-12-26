@@ -401,7 +401,7 @@ namespace stw
         return validateCertificate;
     }
 
-    bool http_client::get(const http_request &req, http_response &res)
+    bool http_client::get(const http_client_request &req, http_client_response &res)
     {
         if(!curl::is_loaded())
             return false;
@@ -467,7 +467,7 @@ namespace stw
         return true;
     }
 
-    bool http_client::post(const http_request &req, http_response &res)
+    bool http_client::post(const http_client_request &req, http_client_response &res)
     {
         if(!curl::is_loaded())
             return false;
@@ -547,7 +547,7 @@ namespace stw
         return true;
     }
 
-    bool http_client::parse_header(const std::string &responseText, http_headers &header, int &statusCode, uint64_t &contentLength)
+    bool http_client::parse_header(const std::string &responseText, std::unordered_map<std::string,std::string> &header, int &statusCode, uint64_t &contentLength)
     {
         std::istringstream responseStream(responseText);
         std::string line;
@@ -612,5 +612,111 @@ namespace stw
         std::string* str = static_cast<std::string*>(userp);
         str->append(static_cast<char*>(contents), totalSize);
         return totalSize;
+    }
+
+    http_client_request::http_client_request()
+    {
+        content = nullptr;
+        contentLength = 0;
+        contentType = "text/plain";
+        ownsData = false;
+    }
+
+    http_client_request::~http_client_request()
+    {
+        if(content && ownsData)
+        {
+            delete[] content;
+        }
+    }
+
+    void http_client_request::set_url(const std::string &url)
+    {
+        this->url = url;
+    }
+
+    std::string http_client_request::get_url() const
+    {   
+        return url;
+    }
+
+    void http_client_request::set_content(void *data, uint64_t size, bool copyData)
+    {
+        if(!data || size == 0)
+            return;
+
+        if(content && ownsData)
+        {
+            delete[] content;
+            content = nullptr;
+            contentLength = 0;
+        }
+
+        ownsData = copyData;
+        contentLength = size;
+
+        if(ownsData)
+        {
+            content = new uint8_t[size];
+            std::memcpy(content, data, size);
+        }
+        else
+        {
+            content = reinterpret_cast<uint8_t*>(data);
+            contentLength = size;
+        }
+
+        return;
+    }
+
+    uint8_t *http_client_request::get_content() const
+    {
+        return content;
+    }
+
+    uint64_t http_client_request::get_content_length() const
+    {
+        return contentLength;
+    }
+
+    void http_client_request::set_content_type(const std::string &contentType)
+    {
+        this->contentType = contentType;
+    }
+
+    std::string http_client_request::get_content_type() const
+    {
+        return contentType;
+    }
+
+    void http_client_request::set_header(const std::string &key, const std::string &value)
+    {
+        header[key] = value;
+    }
+
+    std::unordered_map<std::string,std::string> http_client_request::get_headers() const
+    {
+        return header;
+    }
+
+    http_client_response::http_client_response()
+    {
+        statusCode = 0;
+        contentLength = 0;
+    }
+
+    int http_client_response::get_status_code() const
+    {
+        return statusCode;
+    }
+    
+    uint64_t http_client_response::get_content_length() const
+    {
+        return contentLength;
+    }
+
+    std::unordered_map<std::string,std::string> &http_client_response::get_headers()
+    {
+        return header;
     }
 }
