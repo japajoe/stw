@@ -99,6 +99,7 @@ namespace stw::experimental
 			}
         }
 
+		// This socket could be allocated but not used, so delete it
 		if(client)
 			delete client;
 

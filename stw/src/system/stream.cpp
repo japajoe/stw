@@ -156,6 +156,8 @@ namespace stw
 				std::free(memory);
 			}
 		}
+
+		memory = nullptr;
 	}
 
 	int64_t memory_stream::read(void *buffer, size_t bytesToRead)

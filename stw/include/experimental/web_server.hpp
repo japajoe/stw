@@ -52,10 +52,6 @@ namespace stw::experimental
 			lastActivity = std::chrono::steady_clock::now();
 			isLocked.store(false);
         }
-		~http_context()
-		{
-			connection.reset();
-		}
     };
 
     struct worker_context
