@@ -130,7 +130,7 @@ namespace stw::experimental
 			if(activeEvents.size() > 0)
 				activeEvents.clear();
 
-			int32_t count = worker->poller->wait(activeEvents, 1000);
+			int32_t eventCount = worker->poller->wait(activeEvents, 1000);
 
 			auto now = std::chrono::steady_clock::now();
 
@@ -171,6 +171,9 @@ namespace stw::experimental
                 worker->contexts[fd] = std::make_shared<http_context>(newConnection);
                 worker->poller->add(fd, stw::poll_event_read);
             }
+
+			if(eventCount == 0)
+				continue;
 
             for (const auto &ev : activeEvents)
             {
@@ -215,25 +218,25 @@ namespace stw::experimental
         
         if (it == worker->contexts.end()) 
             return;
-        
+
         std::shared_ptr<http_context> context = it->second;
 
         char tempBuffer[8192];
 
         while (true) 
         {
-            int64_t bytes = context->connection->read(tempBuffer, sizeof(tempBuffer));
+            int64_t bytesRead = context->connection->read(tempBuffer, sizeof(tempBuffer));
             
-            if (bytes > 0) 
+            if (bytesRead > 0) 
             {
 				const uint32_t MAX_HEADER_SIZE = 16384;
-				if (context->requestBuffer.size() + bytes > MAX_HEADER_SIZE) 
+				if (context->requestBuffer.size() + bytesRead > MAX_HEADER_SIZE) 
 				{
 					send_response(worker, context, 431);
 					return;
 				}
 
-                context->requestBuffer.append(tempBuffer, bytes);
+                context->requestBuffer.append(tempBuffer, bytesRead);
                 size_t headerEnd = context->requestBuffer.find("\r\n\r\n");
 
                 if (headerEnd != std::string::npos)
@@ -295,7 +298,7 @@ namespace stw::experimental
             }
             else
             {
-                if(bytes == -1)
+                if(bytesRead == -1)
                 {
                     // Socket drained. Level-triggered epoll will wake us up later.
                     if (STW_SOCKET_ERR == STW_EAGAIN || STW_SOCKET_ERR == STW_EWOULDBLOCK) 
