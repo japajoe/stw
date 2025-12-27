@@ -49,8 +49,8 @@ namespace stw
         http_response response;
         uint64_t headerBytesSent;
 		uint32_t requestCount;
+		int64_t lastActivity;
 		bool closeConnection;
-		stw::date_time lastActivity;
 		std::atomic<bool> isLocked;
         http_context();
 		http_context(std::shared_ptr<stw::socket> s);
@@ -65,7 +65,7 @@ namespace stw
 		stw::queue<std::shared_ptr<stw::socket>,1024> queue;
         std::unordered_map<int32_t,std::shared_ptr<http_context>> contexts;
         std::unique_ptr<stw::poller> poller;
-		stw::date_time lastCleanup;
+		int64_t lastCleanup;
 		uint32_t maxRequests;
 		uint32_t keepAliveTime;
         std::atomic<bool> stopFlag;

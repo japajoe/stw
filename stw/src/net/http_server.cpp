@@ -141,11 +141,9 @@ namespace stw
 
 			int32_t eventCount = worker->poller->wait(activeEvents, 1000);
 
-			auto now = stw::date_time::get_now();
-			auto nowMilliseconds = now.get_time_since_epoch_in_milliseconds();
-			auto lastCleanupMilliseconds = worker->lastCleanup.get_time_since_epoch_in_milliseconds();
+			auto now = stw::date_time::get_now().get_time_since_epoch_in_milliseconds();
 
-			if((nowMilliseconds - lastCleanupMilliseconds) > 5000)
+			if((now - worker->lastCleanup) > 5000)
 			{
 				for (auto it = worker->contexts.begin(); it != worker->contexts.end();)
 				{
@@ -157,9 +155,7 @@ namespace stw
 						continue;
 					}
 
-					auto lastActivityMilliseconds = context->lastActivity.get_time_since_epoch_in_milliseconds();
-
-					if((nowMilliseconds - lastActivityMilliseconds) > (worker->keepAliveTime * 1000))
+					if((now - context->lastActivity) > (worker->keepAliveTime * 1000))
 					{
 						int32_t fd = context->connection->get_file_descriptor();
 						worker->poller->remove(fd);
@@ -538,7 +534,7 @@ namespace stw
         context->responseBuffer.clear();
         context->headerBytesSent = 0;
         context->response.content.reset();
-		context->lastActivity = stw::date_time::get_now();
+		context->lastActivity = stw::date_time::get_now().get_time_since_epoch_in_milliseconds();
 		context->request.headers.clear();
 		context->response.headers.clear();
         
@@ -551,7 +547,7 @@ namespace stw
 		headerBytesSent = 0;
 		closeConnection = false;
 		requestCount = 0;
-		lastActivity = date_time::get_now();
+		lastActivity = date_time::get_now().get_time_since_epoch_in_milliseconds();
 		isLocked.store(false);
 	}
 
@@ -561,7 +557,7 @@ namespace stw
 		headerBytesSent = 0;
 		closeConnection = false;
 		requestCount = 0;
-		lastActivity = date_time::get_now();
+		lastActivity = date_time::get_now().get_time_since_epoch_in_milliseconds();
 		isLocked.store(false);
 	}
 
@@ -569,7 +565,7 @@ namespace stw
     {
         stopFlag.store(false);
         poller = stw::poller::create();
-		lastCleanup = stw::date_time::get_now();
+		lastCleanup = stw::date_time::get_now().get_time_since_epoch_in_milliseconds();;
 		maxRequests = 100;
 		keepAliveTime = 15;
     }
