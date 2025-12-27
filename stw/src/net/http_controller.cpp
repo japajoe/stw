@@ -20,52 +20,52 @@
 
 namespace stw
 {
-	http_response http_controller::on_get(const http_request &request, network_stream *stream)
+	http_response http_controller::on_get(const http_request &request, http_stream *stream)
 	{
 		return create_response(http_status_code_method_not_allowed);
 	}
 
-	http_response http_controller::on_post(const http_request &request, network_stream *stream)
+	http_response http_controller::on_post(const http_request &request, http_stream *stream)
 	{
 		return create_response(http_status_code_method_not_allowed);
 	}
 
-	http_response http_controller::on_put(const http_request &request, network_stream *stream)
+	http_response http_controller::on_put(const http_request &request, http_stream *stream)
 	{
 		return create_response(http_status_code_method_not_allowed);
 	}
 
-	http_response http_controller::on_patch(const http_request &request, network_stream *stream)
+	http_response http_controller::on_patch(const http_request &request, http_stream *stream)
 	{
 		return create_response(http_status_code_method_not_allowed);
 	}
 
-	http_response http_controller::on_delete(const http_request &request, network_stream *stream)
+	http_response http_controller::on_delete(const http_request &request, http_stream *stream)
 	{
 		return create_response(http_status_code_method_not_allowed);
 	}
 
-	http_response http_controller::on_head(const http_request &request, network_stream *stream)
+	http_response http_controller::on_head(const http_request &request, http_stream *stream)
 	{
 		return create_response(http_status_code_method_not_allowed);
 	}
 
-	http_response http_controller::on_options(const http_request &request, network_stream *stream)
+	http_response http_controller::on_options(const http_request &request, http_stream *stream)
 	{
 		return create_response(http_status_code_method_not_allowed);
 	}
 
-	http_response http_controller::on_trace(const http_request &request, network_stream *stream)
+	http_response http_controller::on_trace(const http_request &request, http_stream *stream)
 	{
 		return create_response(http_status_code_method_not_allowed);
 	}
 
-	http_response http_controller::on_connect(const http_request &request, network_stream *stream)
+	http_response http_controller::on_connect(const http_request &request, http_stream *stream)
 	{
 		return create_response(http_status_code_method_not_allowed);
 	}
 
-	http_response http_controller::on_unknown_method(const http_request &request, network_stream *stream)
+	http_response http_controller::on_unknown_method(const http_request &request, http_stream *stream)
 	{
 		return create_response(http_status_code_not_implemented);
 	}

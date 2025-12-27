@@ -53,7 +53,7 @@ namespace stw
 		return nullptr;
 	}
 
-	bool http_request_router::process_request(const http_request &request, network_stream *stream, http_response &response)
+	bool http_request_router::process_request(const http_request &request, http_stream *stream, http_response &response)
 	{
 		auto r = get(request.path);
 

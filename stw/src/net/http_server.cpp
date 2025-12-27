@@ -11,7 +11,6 @@
 
 namespace stw
 {
-//#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
     http_server::http_server()
     {
         isRunning.store(false);
@@ -63,7 +62,7 @@ namespace stw
         for (size_t i = 0; i < threadCount; ++i)
         {
             workers.push_back(std::make_unique<http_worker_context>());
-            workers.back()->thread = std::thread(&http_server::network_loop, this, workers.back().get());
+            workers.back()->thread = std::thread(&http_server::worker_update, this, workers.back().get());
         }
 
         std::cout << "Server started listening on http://" << config.bindAddress << ":" << config.portHttp << '\n';
@@ -112,7 +111,7 @@ namespace stw
         return 0;
     }
 
-    void http_server::network_loop(http_worker_context *worker)
+    void http_server::worker_update(http_worker_context *worker)
     {
         std::vector<stw::poll_event_result> activeEvents;
         activeEvents.reserve(1024);
@@ -124,9 +123,11 @@ namespace stw
 
 			int32_t eventCount = worker->poller->wait(activeEvents, 1000);
 
-			auto now = std::chrono::steady_clock::now();
+			auto now = stw::date_time::get_now();
+			auto nowMilliseconds = now.get_time_since_epoch_in_milliseconds();
+			auto lastCleanupMilliseconds = worker->lastCleanup.get_time_since_epoch_in_milliseconds();
 
-			if(now - worker->lastCleanup > std::chrono::seconds(5))
+			if((nowMilliseconds - lastCleanupMilliseconds) > 5000)
 			{
 				for (auto it = worker->contexts.begin(); it != worker->contexts.end();)
 				{
@@ -138,8 +139,11 @@ namespace stw
 						continue;
 					}
 
-					if(std::chrono::duration_cast<std::chrono::seconds>(now - context->lastActivity).count() > worker->keepAliveTime)
+					auto lastActivityMilliseconds = context->lastActivity.get_time_since_epoch_in_milliseconds();
+
+					if((nowMilliseconds - lastActivityMilliseconds) > (worker->keepAliveTime * 1000))
 					{
+						std::cout << "Cleaning up connection\n";
 						int32_t fd = context->connection->get_file_descriptor();
 						worker->poller->remove(fd);
 						context->connection->close();
@@ -244,16 +248,16 @@ namespace stw
                     size_t headerTotalSize = headerEnd + 4;
                     size_t leftOverSize = context->requestBuffer.size() - headerTotalSize;
 
-                    std::shared_ptr<network_stream> networkStream;
+                    std::shared_ptr<http_stream> networkStream;
                     
                     if(leftOverSize > 0)
                     {
                         std::string initialContent = context->requestBuffer.substr(headerTotalSize);
-                        networkStream = std::make_shared<network_stream>(context->connection, initialContent.data(), initialContent.size());
+                        networkStream = std::make_shared<http_stream>(context->connection, initialContent.data(), initialContent.size());
                     }
                     else
                     {
-                        networkStream = std::make_shared<network_stream>(context->connection, nullptr, 0);
+                        networkStream = std::make_shared<http_stream>(context->connection, nullptr, 0);
                     }
 
                     worker->poller->remove(context->connection->get_file_descriptor());
@@ -308,7 +312,7 @@ namespace stw
         }
     }
 
-	void http_server::process_request(http_worker_context *worker, std::shared_ptr<http_context> context, std::shared_ptr<network_stream> networkStream)
+	void http_server::process_request(http_worker_context *worker, std::shared_ptr<http_context> context, std::shared_ptr<http_stream> networkStream)
 	{
 		context->connection->set_blocking(true);
 
@@ -517,18 +521,38 @@ namespace stw
         context->responseBuffer.clear();
         context->headerBytesSent = 0;
         context->response.content.reset();
-		context->lastActivity = std::chrono::steady_clock::now();
+		context->lastActivity = stw::date_time::get_now();
 		context->request.headers.clear();
 		context->response.headers.clear();
         
         worker->poller->modify(context->connection->get_file_descriptor(), stw::poll_event_read);
     }
 
+	http_context::http_context()
+	{
+		connection = nullptr;
+		headerBytesSent = 0;
+		closeConnection = false;
+		requestCount = 0;
+		lastActivity = date_time::get_now();
+		isLocked.store(false);
+	}
+
+	http_context::http_context(std::shared_ptr<stw::socket> s)
+	{
+		connection = s;
+		headerBytesSent = 0;
+		closeConnection = false;
+		requestCount = 0;
+		lastActivity = date_time::get_now();
+		isLocked.store(false);
+	}
+
     http_worker_context::http_worker_context()
     {
         stopFlag.store(false);
         poller = stw::poller::create();
-		lastCleanup = std::chrono::steady_clock::now();
+		lastCleanup = stw::date_time::get_now();
 		maxRequests = 100;
 		keepAliveTime = 15;
     }
@@ -555,5 +579,4 @@ namespace stw
 		context->response.content.reset();
         contexts.erase(fd);
     }
-//#endif
 }

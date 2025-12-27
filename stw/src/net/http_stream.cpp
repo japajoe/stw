@@ -16,12 +16,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "network_stream.hpp"
+#include "http_stream.hpp"
 #include <cstring>
 
 namespace stw
 {
-	network_stream::network_stream()
+	http_stream::http_stream()
 	{
 		socket = nullptr;
 		initialContent = nullptr;
@@ -29,7 +29,7 @@ namespace stw
 		initialContentConsumed = 0;
 	}
 
-	network_stream::network_stream(std::shared_ptr<stw::socket> socket, void *initialContent, size_t initialContentLength)
+	http_stream::http_stream(std::shared_ptr<stw::socket> socket, void *initialContent, size_t initialContentLength)
 	{
 		this->socket = socket;
 		
@@ -50,14 +50,14 @@ namespace stw
 		}
 	}
 
-	network_stream::~network_stream()
+	http_stream::~http_stream()
 	{
 		if(initialContent)
 			std::free(initialContent);
 		initialContent = nullptr;
 	}
 
-	int64_t network_stream::read(void *buffer, size_t size)
+	int64_t http_stream::read(void *buffer, size_t size)
 	{
 		if (socket == nullptr) 
 			return 0;
@@ -85,7 +85,7 @@ namespace stw
 		return socket->read(buffer, size);
 	}
 
-	int64_t network_stream::write(const void *buffer, size_t size)
+	int64_t http_stream::write(const void *buffer, size_t size)
 	{
 		if(socket == nullptr)
 			return 0;

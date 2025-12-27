@@ -20,7 +20,7 @@
 #define STW_HTTP_REQUEST_ROUTER_HPP
 
 #include "http.hpp"
-#include "network_stream.hpp"
+#include "http_stream.hpp"
 #include "http_controller.hpp"
 #include <vector>
 #include <regex>
@@ -30,13 +30,13 @@
 
 namespace stw
 {
-	using http_request_handler = std::function<http_response(const http_request &request, network_stream *stream)>;
+	using http_request_handler = std::function<http_response(const http_request &request, http_stream *stream)>;
 	using http_controller_handler = std::function<std::unique_ptr<http_controller>()>;
 
 	class http_request_router
 	{
 	public:
-		bool process_request(const http_request &request, network_stream *stream, http_response &response);
+		bool process_request(const http_request &request, http_stream *stream, http_response &response);
 		void add(http_method method, const std::string &route, http_request_handler handler);
 		void add(http_method method, const std::regex &route, http_request_handler handler);
 

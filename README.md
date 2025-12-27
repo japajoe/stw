@@ -134,13 +134,15 @@ int main()
 If successful, the generated files will be in the output directory. The class names will have the form `name_view.hpp`. You can now use these files in your project like so:
 
 ```cpp
-#include "stw/stw.hpp"
+#include "stw/include/stw.hpp" //Or wherever you decided to put the headers
+#include "stw/include/net/http_server.hpp" 
+#include "stw/include/net/http_request_router.hpp"
 #include "index_view.html" //Assuming you have a class called index_view
 
 class index_controller : public stw::http_controller
 {
 public:
-	stw::http_response on_get(const stw::http_request &request, stw::network_stream *stream) override
+	stw::http_response on_get(const stw::http_request &request, stw::http_stream *stream) override
 	{
 		auto responseInfo = view.get(&request);
 		stw::http_response response;

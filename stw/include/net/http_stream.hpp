@@ -16,8 +16,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef STW_NETWORK_STREAM_HPP
-#define STW_NETWORK_STREAM_HPP
+#ifndef STW_HTTP_STREAM_HPP
+#define STW_HTTP_STREAM_HPP
 
 #include "socket.hpp"
 #include <cstdint>
@@ -26,12 +26,12 @@
 
 namespace stw
 {
-	class network_stream
+	class http_stream
 	{
 	public:
-		network_stream();
-		network_stream(std::shared_ptr<stw::socket> socket, void *initialContent, uint64_t initialContentLength);
-		~network_stream();
+		http_stream();
+		http_stream(std::shared_ptr<stw::socket> socket, void *initialContent, uint64_t initialContentLength);
+		~http_stream();
 		int64_t read(void *buffer, size_t size);
 		int64_t write(const void *buffer, size_t size);
 	private:

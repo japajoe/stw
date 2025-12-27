@@ -20,7 +20,7 @@
 #define STW_HTTP_CONTROLLER_HPP
 
 #include "http.hpp"
-#include "network_stream.hpp"
+#include "http_stream.hpp"
 
 namespace stw
 {
@@ -28,16 +28,16 @@ namespace stw
 	{
 	public:
 		virtual ~http_controller() = default;
-		virtual http_response on_get(const http_request &request, network_stream *stream);
-		virtual http_response on_post(const http_request &request, network_stream *stream);
-		virtual http_response on_put(const http_request &request, network_stream *stream);
-		virtual http_response on_patch(const http_request &request, network_stream *stream);
-		virtual http_response on_delete(const http_request &request, network_stream *stream);
-		virtual http_response on_head(const http_request &request, network_stream *stream);
-		virtual http_response on_options(const http_request &request, network_stream *stream);
-		virtual http_response on_trace(const http_request &request, network_stream *stream);
-		virtual http_response on_connect(const http_request &request, network_stream *stream);
-		virtual http_response on_unknown_method(const http_request &request, network_stream *stream);
+		virtual http_response on_get(const http_request &request, http_stream *stream);
+		virtual http_response on_post(const http_request &request, http_stream *stream);
+		virtual http_response on_put(const http_request &request, http_stream *stream);
+		virtual http_response on_patch(const http_request &request, http_stream *stream);
+		virtual http_response on_delete(const http_request &request, http_stream *stream);
+		virtual http_response on_head(const http_request &request, http_stream *stream);
+		virtual http_response on_options(const http_request &request, http_stream *stream);
+		virtual http_response on_trace(const http_request &request, http_stream *stream);
+		virtual http_response on_connect(const http_request &request, http_stream *stream);
+		virtual http_response on_unknown_method(const http_request &request, http_stream *stream);
 	protected:
 		inline http_response create_response(uint32_t statusCode);
 	};

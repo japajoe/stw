@@ -26,7 +26,6 @@
 namespace stw
 {
     using time_stamp = std::chrono::system_clock::time_point;
-	using time_point = std::chrono::steady_clock::time_point;
 
     class date_time
     {

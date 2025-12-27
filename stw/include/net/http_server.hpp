@@ -5,7 +5,7 @@
 #include "poller.hpp"
 #include "http.hpp"
 #include "http_config.hpp"
-#include "network_stream.hpp"
+#include "http_stream.hpp"
 #include "../system/thread_pool.hpp"
 #include "../system/queue.hpp"
 #include "../system/stream.hpp"
@@ -17,7 +17,6 @@
 #include <vector>
 #include <memory>
 #include <thread>
-#include <chrono>
 #include <functional>
 #include <unordered_map>
 
@@ -33,26 +32,10 @@ namespace stw
         uint64_t headerBytesSent;
 		uint32_t requestCount;
 		bool closeConnection;
-		time_point lastActivity;
+		stw::date_time lastActivity;
 		std::atomic<bool> isLocked;
-        http_context()
-        {
-            connection = nullptr;
-            headerBytesSent = 0;
-			closeConnection = false;
-			requestCount = 0;
-			lastActivity = std::chrono::steady_clock::now();
-			isLocked.store(false);
-        }
-		http_context(std::shared_ptr<stw::socket> s)
-        {
-			connection = s;
-            headerBytesSent = 0;
-			closeConnection = false;
-			requestCount = 0;
-			lastActivity = std::chrono::steady_clock::now();
-			isLocked.store(false);
-        }
+        http_context();
+		http_context(std::shared_ptr<stw::socket> s);
     };
 
     struct http_worker_context
@@ -64,13 +47,13 @@ namespace stw
 		stw::queue<std::shared_ptr<stw::socket>,1024> queue;
         std::unordered_map<int32_t,std::shared_ptr<http_context>> contexts;
         std::unique_ptr<stw::poller> poller;
-		time_point lastCleanup;
+		stw::date_time lastCleanup;
 		uint32_t maxRequests;
 		uint32_t keepAliveTime;
         std::atomic<bool> stopFlag;
     };
 
-    using request_handler = std::function<http_response(const http_request &request, network_stream *stream)>;
+    using request_handler = std::function<http_response(const http_request &request, http_stream *stream)>;
 
     class http_server
     {
@@ -83,10 +66,10 @@ namespace stw
 		stw::http_config config;
         std::atomic<bool> isRunning;
         std::unique_ptr<stw::thread_pool> threadPool;
-        void network_loop(http_worker_context *worker);
+        void worker_update(http_worker_context *worker);
         void on_read(http_worker_context *worker, int32_t fd);
         void on_write(http_worker_context *worker, int32_t fd);
-		void process_request(http_worker_context *worker, std::shared_ptr<http_context> context, std::shared_ptr<network_stream> networkStream);
+		void process_request(http_worker_context *worker, std::shared_ptr<http_context> context, std::shared_ptr<http_stream> networkStream);
         void finalize_request(http_worker_context *worker, std::shared_ptr<http_context> context);
 		void send_response(http_worker_context *worker, std::shared_ptr<http_context> context, uint32_t statusCode);
     };
