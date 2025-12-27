@@ -16,41 +16,34 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef STW_HTTP_ROUTER_HPP
-#define STW_HTTP_ROUTER_HPP
+#ifndef STW_HTTP_REQUEST_ROUTER_HPP
+#define STW_HTTP_REQUEST_ROUTER_HPP
 
 #include "http.hpp"
-#include "http_connection.hpp"
+#include "network_stream.hpp"
 #include "http_controller.hpp"
 #include <vector>
 #include <regex>
-#include <functional>
 #include <memory>
+#include <functional>
 #include <type_traits>
 
 namespace stw
 {
-	using http_request_handler = std::function<void(stw::http_connection *connection, const stw::http_request &request)>;
+	using http_request_handler = std::function<http_response(const http_request &request, network_stream *stream)>;
 	using http_controller_handler = std::function<std::unique_ptr<http_controller>()>;
 
-	struct http_route
-	{
-		std::regex regex;
-		http_method method;
-		http_request_handler requestHandler;
-		http_controller_handler controllerHandler;
-	};
-
-	class http_router
+	class http_request_router
 	{
 	public:
-		bool process_request(const std::string &route, stw::http_connection *connection, const stw::http_request &request);
+		bool process_request(const http_request &request, network_stream *stream, http_response &response);
 		void add(http_method method, const std::string &route, http_request_handler handler);
 		void add(http_method method, const std::regex &route, http_request_handler handler);
+
 		template <typename T>
 		void add(const std::string &route) 
 		{
-            static_assert(std::is_base_of<http_controller, T>::value, "http_router::add parameter T must derive from http_controller");
+            static_assert(std::is_base_of<http_controller, T>::value, "http_request_router::add parameter T must derive from http_controller");
 
 			http_route r = {
 				.regex = std::regex(route),
@@ -61,10 +54,11 @@ namespace stw
 
 			routes.push_back(r);
 		}
+		
 		template <typename T>
 		void add(const std::regex &route) 
 		{
-            static_assert(std::is_base_of<http_controller, T>::value, "http_router::add parameter T must derive from http_controller");
+            static_assert(std::is_base_of<http_controller, T>::value, "http_request_router::add parameter T must derive from http_controller");
 
 			http_route r = {
 				.regex = route,
@@ -75,7 +69,16 @@ namespace stw
 
 			routes.push_back(r);
 		}
+
 	private:
+		struct http_route
+		{
+			std::regex regex;
+			http_method method;
+			http_request_handler requestHandler;
+			http_controller_handler controllerHandler;
+		};
+
 		std::vector<http_route> routes;
 		http_route *get(const std::string &route);
 	};

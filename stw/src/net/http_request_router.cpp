@@ -16,16 +16,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "web_request_router.hpp"
+#include "http_request_router.hpp"
 
-namespace stw::experimental
+namespace stw
 {
-	void web_request_router::add(http_method method, const std::string &route, web_request_handler handler)
+	void http_request_router::add(http_method method, const std::string &route, http_request_handler handler)
 	{
 		add(method, std::regex(route), handler);
 	}
 
-	void web_request_router::add(http_method method, const std::regex &route, web_request_handler handler)
+	void http_request_router::add(http_method method, const std::regex &route, http_request_handler handler)
 	{
 		if(!handler)
 			throw std::runtime_error("request handler must be set");
@@ -40,7 +40,7 @@ namespace stw::experimental
 		routes.push_back(r);
 	}
 
-	web_request_router::http_route *web_request_router::get(const std::string &route)
+	http_request_router::http_route *http_request_router::get(const std::string &route)
 	{
 		for (auto &r : routes)
 		{
@@ -53,7 +53,7 @@ namespace stw::experimental
 		return nullptr;
 	}
 
-	bool web_request_router::process_request(const http_request &request, network_stream *stream, http_response &response)
+	bool http_request_router::process_request(const http_request &request, network_stream *stream, http_response &response)
 	{
 		auto r = get(request.path);
 
@@ -74,7 +74,7 @@ namespace stw::experimental
 		}
 		else if(r->controllerHandler)
 		{
-			auto controller = std::unique_ptr<web_controller>(r->controllerHandler());
+			auto controller = std::unique_ptr<http_controller>(r->controllerHandler());
 			
 			if (controller)
 			{

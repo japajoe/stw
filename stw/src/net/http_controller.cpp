@@ -1,4 +1,4 @@
-// MIT License
+ // MIT License
 // Copyright © 2025 W.M.R Jap-A-Joe
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -20,53 +20,61 @@
 
 namespace stw
 {
-	void http_controller::on_get(http_connection *connection, const http_request &request)
+	http_response http_controller::on_get(const http_request &request, network_stream *stream)
 	{
-		connection->write_response(http_status_code_method_not_allowed);
+		return create_response(http_status_code_method_not_allowed);
 	}
 
-	void http_controller::on_post(http_connection *connection, const http_request &request)
+	http_response http_controller::on_post(const http_request &request, network_stream *stream)
 	{
-		connection->write_response(http_status_code_method_not_allowed);
+		return create_response(http_status_code_method_not_allowed);
 	}
 
-	void http_controller::on_put(http_connection *connection, const http_request &request)
+	http_response http_controller::on_put(const http_request &request, network_stream *stream)
 	{
-		connection->write_response(http_status_code_method_not_allowed);
+		return create_response(http_status_code_method_not_allowed);
 	}
 
-	void http_controller::on_patch(http_connection *connection, const http_request &request)
+	http_response http_controller::on_patch(const http_request &request, network_stream *stream)
 	{
-		connection->write_response(http_status_code_method_not_allowed);
+		return create_response(http_status_code_method_not_allowed);
 	}
 
-	void http_controller::on_delete(http_connection *connection, const http_request &request)
+	http_response http_controller::on_delete(const http_request &request, network_stream *stream)
 	{
-		connection->write_response(http_status_code_method_not_allowed);
+		return create_response(http_status_code_method_not_allowed);
 	}
 
-	void http_controller::on_head(http_connection *connection, const http_request &request)
+	http_response http_controller::on_head(const http_request &request, network_stream *stream)
 	{
-		connection->write_response(http_status_code_method_not_allowed);
+		return create_response(http_status_code_method_not_allowed);
 	}
 
-	void http_controller::on_options(http_connection *connection, const http_request &request)
+	http_response http_controller::on_options(const http_request &request, network_stream *stream)
 	{
-		connection->write_response(http_status_code_method_not_allowed);
+		return create_response(http_status_code_method_not_allowed);
 	}
 
-	void http_controller::on_trace(http_connection *connection, const http_request &request)
+	http_response http_controller::on_trace(const http_request &request, network_stream *stream)
 	{
-		connection->write_response(http_status_code_method_not_allowed);
+		return create_response(http_status_code_method_not_allowed);
 	}
 
-	void http_controller::on_connect(http_connection *connection, const http_request &request)
+	http_response http_controller::on_connect(const http_request &request, network_stream *stream)
 	{
-		connection->write_response(http_status_code_method_not_allowed);
+		return create_response(http_status_code_method_not_allowed);
 	}
 
-	void http_controller::on_unknown_method(http_connection *connection, const http_request &request)
+	http_response http_controller::on_unknown_method(const http_request &request, network_stream *stream)
 	{
-		connection->write_response(http_status_code_not_implemented);
+		return create_response(http_status_code_not_implemented);
+	}
+
+	http_response http_controller::create_response(uint32_t statusCode)
+	{
+		http_response response;
+		response.content = nullptr;
+		response.statusCode = statusCode;
+		return response;
 	}
 }

@@ -1,5 +1,5 @@
 # stw
-A library for making web based applications. Although it has quite some functionality, the most important piece is the `stw::socket` class. It can be used just by itself and doesn't rely on anything in this library.
+A library for making web based applications.
 
 # Features
 - HTTP server.
@@ -20,15 +20,11 @@ A library for making web based applications. Although it has quite some function
 # Requirements for Mac
 - Work in progress, but the `stw::socket` class does work on Mac as it is.
 
-No linking is required with any libraries, but on Linux you must have these libraries somewhere in your system path. On Windows you must place the dll files in the same directory as the executable. MacOS is not fully supported (yet).
-
-# Generating certificate with openssl
-```
-openssl req -newkey rsa:4096 -x509 -sha256 -days 3650 -nodes -out cert.pem -keyout key.pem
-```
+# Notes on requirements
+I've removed the old http server implementation, the new one does not use any TLS. As a result, you only need to have the  libraries if you want to use the `stw::websocket` and `stw::http_client`. No linking is required with any libraries, but on Linux you must have these libraries somewhere in your system path. On Windows you must place the dll files in the same directory as the executable. MacOS is not fully supported (yet).
 
 # Getting started
-Before using the library make sure to call stw::load_library. See the demo for a http server and web socket client. 
+Before using the library make sure to call stw::load_library.
 
 # Mixing HTML and C++
 Sure, the code highlighting isn't super great, and your code editor won't offer any code completion. On top of that, this abomination can be cumbersome to debug. That said, don't act like this isn't a cool feature!
@@ -144,34 +140,67 @@ If successful, the generated files will be in the output directory. The class na
 #include "stw/net/http_server.hpp"
 #include "index_view.html" //Assuming you have a class called index_view
 
+class index_controller : public stw::http_controller
+{
+public:
+	stw::http_response on_get(const stw::http_request &request, stw::network_stream *stream) override
+	{
+		auto responseInfo = view.get(&request);
+		stw::http_response response;
+		response.statusCode = stw::http_status_code_ok;
+		response.contentType = "text/html";
+		response.content = std::make_shared<stw::memory_stream>(responseInfo->content.data(), responseInfo->content.size(), true);
+		return response;
+	}
+private:
+	index_view view;
+};
+
 int main()
 {
-	stw::http_server server;
-	stw::http_server_configuration config;
-
 	stw::load_library();
 
 	if(!config.load_from_file("config.ini"))
 		return 1;
 
-	server.onRequest = [this] (stw::http_connection *connection, const stw::http_request &request) {
-		if(request.path == "/index")
+	stw::http_server server;
+	stw::http_server_configuration config;
+	stw::http_request_router router;
+
+	router.add<index_controller>("/");
+
+	server.onRequest = [&] (const stw::http_request &request, stw::network_stream *stream) -> stw::http_response {
+		stw::http_response response;
+
+		if(router.process_request(request, stream, response))
 		{
-			index_view view;
-			auto response = view.get(&request);
-			connection->write_response(stw::http_status_code_ok, response);
+			return response;
 		}
 		else
 		{
-			connection->write_response(stw::http_status_code_not_found);
+			// If no route was found, the user may have requested a file
+			std::string path = config.publicHtmlPath + request.path;
+
+			// Checks if the file exists, and if it's inside the public html directory or any of its children
+			if(stw::file::is_within_directory(path, config.publicHtmlPath))
+			{
+				response.statusCode = stw::http_status_code_ok;
+				response.content = std::make_shared<stw::file_stream>(path, stw::file_access_read);
+				response.headers["Content-Type"] = stw::get_http_content_type(path);
+				response.headers["Cache-Control"] = "max-age=3600";
+			}
+			else
+			{
+				response.statusCode = stw::http_status_code_not_found;
+			}
+
+			return response;
 		}
 	};
 
-	server.run(config);
-
-	return 0;
+	return server.run(config.bindAddress, config.portHttp, 4096);
 }
 ```
 
 # Disclaimer
-This library is just for educational purposes. It is a means for me to have fun while exploring new concepts and improve my understanding of networking and cross-platform development. Use at your own discretion.
+This library is just for educational purposes. It is a means for me to have fun while exploring new concepts and improve my understanding of networking and cross-platform development. I might add or remove anything I want at any given time if it suits me. Use at your own discretion.

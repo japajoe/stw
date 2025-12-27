@@ -1,59 +1,93 @@
-// MIT License
-// Copyright © 2025 W.M.R Jap-A-Joe
-
-// Permission is hereby granted, free of charge, to any person obtaining a copy of
-// this software and associated documentation files (the "Software"), to deal in
-// the Software without restriction, including without limitation the rights to
-// use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-// of the Software, and to permit persons to whom the Software is furnished to do
-// so.
-
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
-
-#ifndef STW_HTTP_SERVER
-#define STW_HTTP_SERVER
+#ifndef STW_HTTP_SERVER_HPP
+#define STW_HTTP_SERVER_HPP
 
 #include "socket.hpp"
-#include "ssl.hpp"
+#include "poller.hpp"
 #include "http.hpp"
-#include "http_connection.hpp"
-#include "http_config.hpp"
+#include "network_stream.hpp"
 #include "../system/thread_pool.hpp"
-#include <string>
-#include <functional>
-#include <vector>
+#include "../system/queue.hpp"
+#include "../system/stream.hpp"
+#include "../system/date_time.hpp"
 #include <atomic>
+#include <cstdint>
+#include <cstdlib>
+#include <string>
+#include <vector>
+#include <memory>
+#include <thread>
+#include <chrono>
+#include <functional>
+#include <unordered_map>
 
 namespace stw
 {
-	using http_request_handler = std::function<void(http_connection *connection, const http_request &request)>;
+    struct http_context
+    {
+        std::shared_ptr<stw::socket> connection;
+        std::string requestBuffer;
+		std::string responseBuffer;
+        http_request request;
+        http_response response;
+        uint64_t headerBytesSent;
+		uint32_t requestCount;
+		bool closeConnection;
+		time_point lastActivity;
+		std::atomic<bool> isLocked;
+        http_context()
+        {
+            connection = nullptr;
+            headerBytesSent = 0;
+			closeConnection = false;
+			requestCount = 0;
+			lastActivity = std::chrono::steady_clock::now();
+			isLocked.store(false);
+        }
+		http_context(std::shared_ptr<stw::socket> s)
+        {
+			connection = s;
+            headerBytesSent = 0;
+			closeConnection = false;
+			requestCount = 0;
+			lastActivity = std::chrono::steady_clock::now();
+			isLocked.store(false);
+        }
+    };
 
-	class http_server
-	{
-	public:
-		http_request_handler onRequest;
-		http_server();
-		~http_server();
-		void run(const http_config &config);
-		void stop();
-	private:
-		std::vector<socket> listeners;
-		ssl_context sslContext;
-		http_config config;
-		std::atomic<bool> quit;
-		thread_pool threadPool;
-		void accept_http();
-		void accept_https();
-		void on_request(http_connection *connection);
-		http_header_error read_header(http_connection *connection, std::string &header);
-		bool parse_request_header(const std::string &responseText, http_headers &header, std::string &method, std::string &path, uint64_t &contentLength);
-	};
+    struct http_worker_context
+    {
+        http_worker_context();
+		bool enqueue(std::shared_ptr<stw::socket> s);
+        void remove(std::shared_ptr<http_context> context, const char *sender);
+        std::thread thread;
+		stw::queue<std::shared_ptr<stw::socket>,1024> queue;
+        std::unordered_map<int32_t,std::shared_ptr<http_context>> contexts;
+        std::unique_ptr<stw::poller> poller;
+		time_point lastCleanup;
+		uint32_t maxRequests;
+		uint32_t keepAliveTime;
+        std::atomic<bool> stopFlag;
+    };
+
+    using request_handler = std::function<http_response(const http_request &request, network_stream *stream)>;
+
+    class http_server
+    {
+    public:
+        request_handler onRequest;
+        http_server();
+        int run(const std::string &bindAddress, uint16_t port, uint32_t backlog);
+    private:
+        stw::socket listener;
+        std::atomic<bool> isRunning;
+        std::unique_ptr<stw::thread_pool> threadPool;
+        void network_loop(http_worker_context *worker);
+        void on_read(http_worker_context *worker, int32_t fd);
+        void on_write(http_worker_context *worker, int32_t fd);
+		void process_request(http_worker_context *worker, std::shared_ptr<http_context> context, std::shared_ptr<network_stream> networkStream);
+        void finalize_request(http_worker_context *worker, std::shared_ptr<http_context> context);
+		void send_response(http_worker_context *worker, std::shared_ptr<http_context> context, uint32_t statusCode);
+    };
 }
 
 #endif

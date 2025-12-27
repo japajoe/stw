@@ -1,4 +1,4 @@
-// MIT License
+ // MIT License
 // Copyright © 2025 W.M.R Jap-A-Joe
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -19,11 +19,8 @@
 #ifndef STW_HTTP_CONTROLLER_HPP
 #define STW_HTTP_CONTROLLER_HPP
 
-#include "http_connection.hpp"
 #include "http.hpp"
-#include <sstream>
-#include <string>
-#include <unordered_map>
+#include "network_stream.hpp"
 
 namespace stw
 {
@@ -31,16 +28,18 @@ namespace stw
 	{
 	public:
 		virtual ~http_controller() = default;
-		virtual void on_get(http_connection *connection, const http_request &request);
-		virtual void on_post(http_connection *connection, const http_request &request);
-		virtual void on_put(http_connection *connection, const http_request &request);
-		virtual void on_patch(http_connection *connection, const http_request &request);
-		virtual void on_delete(http_connection *connection, const http_request &request);
-		virtual void on_head(http_connection *connection, const http_request &request);
-		virtual void on_options(http_connection *connection, const http_request &request);
-		virtual void on_trace(http_connection *connection, const http_request &request);
-		virtual void on_connect(http_connection *connection, const http_request &request);
-		virtual void on_unknown_method(http_connection *connection, const http_request &request);
+		virtual http_response on_get(const http_request &request, network_stream *stream);
+		virtual http_response on_post(const http_request &request, network_stream *stream);
+		virtual http_response on_put(const http_request &request, network_stream *stream);
+		virtual http_response on_patch(const http_request &request, network_stream *stream);
+		virtual http_response on_delete(const http_request &request, network_stream *stream);
+		virtual http_response on_head(const http_request &request, network_stream *stream);
+		virtual http_response on_options(const http_request &request, network_stream *stream);
+		virtual http_response on_trace(const http_request &request, network_stream *stream);
+		virtual http_response on_connect(const http_request &request, network_stream *stream);
+		virtual http_response on_unknown_method(const http_request &request, network_stream *stream);
+	protected:
+		inline http_response create_response(uint32_t statusCode);
 	};
 }
 
