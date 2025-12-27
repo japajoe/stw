@@ -22,23 +22,25 @@
 #include <mutex>
 
 #if defined(_WIN32) || defined(_WIN64)
-	#ifdef _WIN32_WINNT
-	#undef _WIN32_WINNT
+#ifdef _WIN32_WINNT
+#undef _WIN32_WINNT
 #endif
 #define _WIN32_WINNT 0x0600
-	#include <winsock2.h>
-	#include <ws2tcpip.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #elif defined(__APPLE__) || defined(__FreeBSD__)
-	#include <sys/types.h>
-	#include <sys/event.h>
-	#include <sys/time.h>
-	#include <unistd.h>
-	#include <unordered_map>
+#include <sys/types.h>
+#include <sys/event.h>
+#include <sys/time.h>
+#include <unistd.h>
+#include <unordered_map>
 #else // Linux
-	#include <sys/epoll.h>
-	#include <unistd.h>
-	#include <sys/eventfd.h>
+#include <sys/epoll.h>
+#include <unistd.h>
+#include <sys/eventfd.h>
 #endif
+
+#include <iostream>
 
 namespace stw
 {
@@ -63,8 +65,10 @@ namespace stw
 
 		~epoll_poller()
 		{
-			if (notifyFD != -1) close(notifyFD);
-        	if (epollFD != -1) close(epollFD);
+			if (notifyFD != -1)
+				close(notifyFD);
+			if (epollFD != -1)
+				close(epollFD);
 		}
 
 		bool add(int fd, poll_event_flag flags) override
@@ -73,7 +77,7 @@ namespace stw
 			return ctl(EPOLL_CTL_ADD, fd, flags);
 		}
 
-		bool modify(int32_t fd, poll_event_flag flags) override 
+		bool modify(int32_t fd, poll_event_flag flags) override
 		{
 			std::lock_guard<std::mutex> lock(mtx);
 			return ctl(EPOLL_CTL_MOD, fd, flags);
@@ -96,25 +100,29 @@ namespace stw
 		int32_t wait(std::vector<poll_event_result> &results, int32_t timeout)
 		{
 			int nfds = epoll_wait(epollFD, revents.data(), revents.size(), timeout);
-			
-			for (int32_t i = 0; i < nfds; ++i) 
+
+			for (int32_t i = 0; i < nfds; ++i)
 			{
-				if (revents[i].data.fd == notifyFD) 
+				if (revents[i].data.fd == notifyFD)
 				{
 					// Drain the eventfd notification
 					uint64_t dummy;
 					read(notifyFD, &dummy, sizeof(dummy));
-					continue; 
+					continue;
 				}
 
 				poll_event_result res;
 				res.fd = revents[i].data.fd;
 				res.flags = 0;
 
-				if (revents[i].events & EPOLLIN)  res.flags |= poll_event_read;
-				if (revents[i].events & EPOLLOUT) res.flags |= poll_event_write;
-				if (revents[i].events & EPOLLERR) res.flags |= poll_event_error;
-				if (revents[i].events & EPOLLHUP) res.flags |= poll_event_disconnect;
+				if (revents[i].events & EPOLLIN)
+					res.flags |= poll_event_read;
+				if (revents[i].events & EPOLLOUT)
+					res.flags |= poll_event_write;
+				if (revents[i].events & EPOLLERR)
+					res.flags |= poll_event_error;
+				if (revents[i].events & EPOLLHUP)
+					res.flags |= poll_event_disconnect;
 
 				results.push_back(res);
 			}
@@ -127,15 +135,17 @@ namespace stw
 		std::vector<struct epoll_event> revents;
 		std::mutex mtx;
 
-		bool ctl(int32_t op, int32_t fd, uint32_t flags) 
+		bool ctl(int32_t op, int32_t fd, uint32_t flags)
 		{
 			struct epoll_event ev;
 			ev.data.fd = fd;
-			ev.events = 0;  // Level triggered
-			
-			if (flags & poll_event_read)  ev.events |= EPOLLIN;
-			if (flags & poll_event_write) ev.events |= EPOLLOUT;
-			
+			ev.events = 0; // Level triggered
+
+			if (flags & poll_event_read)
+				ev.events |= EPOLLIN;
+			if (flags & poll_event_write)
+				ev.events |= EPOLLOUT;
+
 			return epoll_ctl(epollFD, op, fd, &ev) == 0;
 		}
 	};
@@ -151,7 +161,7 @@ namespace stw
 
 		~kqueue_poller()
 		{
-			if (kqueueFD != -1) 
+			if (kqueueFD != -1)
 				close(kqueueFD);
 		}
 
@@ -161,7 +171,7 @@ namespace stw
 			return ctl(fd, flags, EV_ADD | EV_ENABLE);
 		}
 
-		bool modify(int32_t fd, poll_event_flag flags) override 
+		bool modify(int32_t fd, poll_event_flag flags) override
 		{
 			std::lock_guard<std::mutex> lock(mtx);
 			// In kqueue, EV_ADD on an existing filter updates it.
@@ -176,8 +186,8 @@ namespace stw
 			// We delete both potential filters. We use the FD as the ident.
 			EV_SET(&kev[0], fd, EVFILT_READ, EV_DELETE, 0, 0, nullptr);
 			EV_SET(&kev[1], fd, EVFILT_WRITE, EV_DELETE, 0, 0, nullptr);
-			
-			// We don't check return here because if one filter wasn't registered, 
+
+			// We don't check return here because if one filter wasn't registered,
 			// kqueue returns an error, which we can safely ignore during removal.
 			kevent(kqueueFD, kev, 2, nullptr, 0, nullptr);
 			return true;
@@ -197,7 +207,6 @@ namespace stw
 			ts.tv_sec = timeout_ms / 1000;
 			ts.tv_nsec = (timeout_ms % 1000) * 1000000;
 
-			
 			int32_t n = kevent(kqueueFD, nullptr, 0, events.data(), events.size(), timeout_ms >= 0 ? &ts : nullptr);
 
 			// Map to merge separate Read/Write kqueue events into one result per FD
@@ -206,19 +215,20 @@ namespace stw
 
 			for (int i = 0; i < n; ++i)
 			{
-				if (events[i].filter == EVFILT_USER) continue;
+				if (events[i].filter == EVFILT_USER)
+					continue;
 
 				int32_t fd = static_cast<int32_t>(events[i].ident);
-				
-				if (fd_to_idx.find(fd) != fd_to_idx.end()) 
+
+				if (fd_to_idx.find(fd) != fd_to_idx.end())
 				{
 					// Already saw this FD in this batch (e.g., we got the WRITE event after the READ)
-					auto& res = results[fd_to_idx[fd]];
+					auto &res = results[fd_to_idx[fd]];
 					map_flags(events[i], res);
-				} 
-				else 
+				}
+				else
 				{
-					poll_event_result res = { fd, 0 };
+					poll_event_result res = {fd, 0};
 					map_flags(events[i], res);
 					fd_to_idx[fd] = results.size();
 					results.push_back(res);
@@ -233,22 +243,26 @@ namespace stw
 		std::unordered_map<int32_t, size_t> fd_to_idx;
 		std::mutex mtx;
 
-		void map_flags(const struct kevent& ev, poll_event_result& res)
+		void map_flags(const struct kevent &ev, poll_event_result &res)
 		{
-			if (ev.filter == EVFILT_READ)  res.flags |= poll_event_read;
-			if (ev.filter == EVFILT_WRITE) res.flags |= poll_event_write;
-			if (ev.flags & EV_ERROR)        res.flags |= poll_event_error;
-			if (ev.flags & EV_EOF)          res.flags |= poll_event_disconnect;
+			if (ev.filter == EVFILT_READ)
+				res.flags |= poll_event_read;
+			if (ev.filter == EVFILT_WRITE)
+				res.flags |= poll_event_write;
+			if (ev.flags & EV_ERROR)
+				res.flags |= poll_event_error;
+			if (ev.flags & EV_EOF)
+				res.flags |= poll_event_disconnect;
 		}
 
-		bool ctl(int32_t fd, uint32_t flags, uint16_t action) 
+		bool ctl(int32_t fd, uint32_t flags, uint16_t action)
 		{
 			struct kevent kev[2];
 			int32_t n = 0;
 
 			// Kqueue requires separate filters for Read and Write.
 			// To match epoll_ctl(MOD), we must ADD the ones we want and DELETE the ones we don't.
-			
+
 			if (flags & poll_event_read)
 				EV_SET(&kev[n++], fd, EVFILT_READ, action, 0, 0, nullptr);
 			else
@@ -258,8 +272,172 @@ namespace stw
 				EV_SET(&kev[n++], fd, EVFILT_WRITE, action, 0, 0, nullptr);
 			else
 				EV_SET(&kev[n++], fd, EVFILT_WRITE, EV_DELETE, 0, 0, nullptr);
-			
+
 			return kevent(kqueueFD, kev, n, nullptr, 0, nullptr) != -1;
+		}
+	};
+#elif defined(_WIN32) || defined(_WIN64)
+	class wsa_poller : public poller
+	{
+	public:
+		wsa_poller()
+		{
+			// Windows doesn't have eventfd; we use a local socket pair for the notify signal
+			setup_notify_sockets();
+		}
+
+		~wsa_poller()
+		{
+			if (notifySend != INVALID_SOCKET)
+				closesocket(notifySend);
+			if (notifyRecv != INVALID_SOCKET)
+				closesocket(notifyRecv);
+		}
+
+		bool add(int32_t fd, poll_event_flag flags) override
+		{
+			std::lock_guard<std::mutex> lock(mtx);
+			WSAPOLLFD pfd = {};
+			pfd.fd = static_cast<SOCKET>(fd);
+			pfd.events = translate_flags_to_win(flags);
+			pollFDs.push_back(pfd);
+			dirty = true;
+			return true;
+		}
+
+		bool modify(int32_t fd, poll_event_flag flags) override
+		{
+			std::lock_guard<std::mutex> lock(mtx);
+			for (auto &pfd : pollFDs)
+			{
+				if (pfd.fd == static_cast<SOCKET>(fd))
+				{
+					pfd.events = translate_flags_to_win(flags);
+					dirty = true;
+					return true;
+				}
+			}
+			return false;
+		}
+
+		bool remove(int32_t fd) override
+		{
+			std::lock_guard<std::mutex> lock(mtx);
+			auto it = std::remove_if(pollFDs.begin(), pollFDs.end(), [fd](const WSAPOLLFD &pfd)
+									 { return pfd.fd == static_cast<SOCKET>(fd); });
+			if (it != pollFDs.end())
+			{
+				pollFDs.erase(it, pollFDs.end());
+				dirty = true;
+				return true;
+			}
+			return false;
+		}
+
+		void notify()
+		{
+			char signal = 1;
+			send(notifySend, &signal, 1, 0);
+		}
+
+		int32_t wait(std::vector<poll_event_result> &results, int32_t timeout)
+		{
+			// Only copy if the interest list actually changed
+			{
+				std::lock_guard<std::mutex> lock(mtx);
+				if (dirty)
+				{
+					workingSet = pollFDs; // std::vector assignment reuses existing memory
+					dirty = false;
+				}
+			}
+
+			if (workingSet.empty())
+				return 0;
+
+			int ret = WSAPoll(workingSet.data(), static_cast<ULONG>(workingSet.size()), timeout);
+
+			if (ret > 0)
+			{
+				for (auto &pfd : workingSet)
+				{
+					if (pfd.revents == 0)
+						continue;
+
+					if (pfd.fd == notifyRecv)
+					{
+						char dummy;
+						recv(notifyRecv, &dummy, 1, 0); // Drain UDP datagram
+						continue;
+					}
+
+					poll_event_result res;
+					res.fd = static_cast<int32_t>(pfd.fd);
+					res.flags = 0;
+
+					if (pfd.revents & POLLIN)
+						res.flags |= poll_event_read;
+					if (pfd.revents & POLLOUT)
+						res.flags |= poll_event_write;
+					if (pfd.revents & POLLERR)
+						res.flags |= poll_event_error;
+					if (pfd.revents & POLLHUP)
+						res.flags |= poll_event_disconnect;
+
+					results.push_back(res);
+				}
+			}
+			return static_cast<int32_t>(results.size());
+		}
+
+	private:
+		SOCKET notifySend = INVALID_SOCKET;
+		SOCKET notifyRecv = INVALID_SOCKET;
+		std::vector<WSAPOLLFD> pollFDs;
+		std::vector<WSAPOLLFD> workingSet;
+		bool dirty = true;
+		std::mutex mtx;
+
+		void setup_notify_sockets()
+		{
+			// 1. Create two UDP sockets
+			notifySend = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+			notifyRecv = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
+			sockaddr_in addr = {};
+			addr.sin_family = AF_INET;
+			addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+			addr.sin_port = 0; // Let OS choose a random port
+
+			// 2. Bind the receiver to a local port
+			bind(notifyRecv, (sockaddr *)&addr, sizeof(addr));
+
+			// 3. Find out which port the OS assigned to the receiver
+			int len = sizeof(addr);
+			getsockname(notifyRecv, (sockaddr *)&addr, &len);
+
+			// 4. "Connect" the sender to that specific port
+			// This allows us to use send() instead of sendto()
+			connect(notifySend, (sockaddr *)&addr, sizeof(addr));
+
+			// 5. Put the receiver in the poll list
+			WSAPOLLFD pfd = {};
+			pfd.fd = notifyRecv;
+			pfd.events = POLLIN;
+
+			std::lock_guard<std::mutex> lock(mtx);
+			pollFDs.push_back(pfd);
+			dirty = true; // Ensure the working set picks this up
+		}
+
+		short translate_flags_to_win(poll_event_flag flags)
+		{
+			short win_flags = 0;
+			if (flags & poll_event_read)
+				win_flags |= POLLIN;
+			if (flags & poll_event_write)
+				win_flags |= POLLOUT;
+			return win_flags;
 		}
 	};
 #endif
@@ -272,7 +450,7 @@ namespace stw
 #elif defined(__APPLE__) || defined(__FreeBSD__)
 		return std::make_unique<kqueue_poller>();
 #elif defined(_WIN32) || defined(_WIN64)
-		throw std::runtime_error("stw::poller for Windows not yet implemented");
+		return std::make_unique<wsa_poller>();
 #else
 		throw std::runtime_error("stw::poller for unknown platform not implemented");
 #endif

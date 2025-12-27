@@ -11,7 +11,7 @@
 
 namespace stw::experimental
 {
-#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
+//#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
     web_server::web_server()
     {
         isRunning.store(false);
@@ -557,5 +557,5 @@ namespace stw::experimental
 		context->response.content.reset();
         contexts.erase(fd);
     }
-#endif
+//#endif
 }

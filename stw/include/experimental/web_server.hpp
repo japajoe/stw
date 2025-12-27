@@ -22,7 +22,6 @@
 
 namespace stw::experimental
 {
-#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
     struct http_context
     {
         std::shared_ptr<stw::socket> connection;
@@ -89,7 +88,6 @@ namespace stw::experimental
         void finalize_request(worker_context *worker, std::shared_ptr<http_context> context);
 		void send_response(worker_context *worker, std::shared_ptr<http_context> context, uint32_t statusCode);
     };
-#endif
 }
 
 #endif
