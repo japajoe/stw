@@ -31,7 +31,8 @@ namespace stw
 			.regex = route,
 			.method = method,
 			.requestHandler = handler,
-			.controllerHandler = nullptr};
+			.controllerHandler = nullptr
+		};
 
 		routes.push_back(r);
 	}

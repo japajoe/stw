@@ -21,14 +21,17 @@
 
 #include "../net/http.hpp"
 #include "../net/network_stream.hpp"
+#include "web_controller.hpp"
 #include <vector>
 #include <regex>
+#include <memory>
 #include <functional>
-
+#include <type_traits>
 
 namespace stw::experimental
 {
 	using web_request_handler = std::function<http_response(const http_request &request, network_stream *stream)>;
+	using web_controller_handler = std::function<std::unique_ptr<web_controller>()>;
 
 	class web_request_router
 	{
@@ -36,12 +39,44 @@ namespace stw::experimental
 		bool process_request(const http_request &request, network_stream *stream, http_response &response);
 		void add(http_method method, const std::string &route, web_request_handler handler);
 		void add(http_method method, const std::regex &route, web_request_handler handler);
+
+		template <typename T>
+		void add(const std::string &route) 
+		{
+            static_assert(std::is_base_of<web_controller, T>::value, "web_request_router::add parameter T must derive from web_controller");
+
+			http_route r = {
+				.regex = std::regex(route),
+				.method = http_method_unknown,
+				.requestHandler = nullptr,
+				.controllerHandler = []() { return std::make_unique<T>(); }
+			};
+
+			routes.push_back(r);
+		}
+		
+		template <typename T>
+		void add(const std::regex &route) 
+		{
+            static_assert(std::is_base_of<web_controller, T>::value, "web_request_router::add parameter T must derive from web_controller");
+
+			http_route r = {
+				.regex = route,
+				.method = http_method_unknown,
+				.requestHandler = nullptr,
+				.controllerHandler = []() { return std::make_unique<T>(); }
+			};
+
+			routes.push_back(r);
+		}
+
 	private:
 		struct http_route
 		{
 			std::regex regex;
 			http_method method;
 			web_request_handler requestHandler;
+			web_controller_handler controllerHandler;
 		};
 
 		std::vector<http_route> routes;

@@ -33,7 +33,8 @@ namespace stw::experimental
 		http_route r = {
 			.regex = route,
 			.method = method,
-			.requestHandler = handler
+			.requestHandler = handler,
+			.controllerHandler = nullptr
 		};
 
 		routes.push_back(r);
@@ -71,10 +72,57 @@ namespace stw::experimental
 				response.statusCode = stw::http_status_code_method_not_allowed;
 			}
 		}
+		else if(r->controllerHandler)
+		{
+			auto controller = std::unique_ptr<web_controller>(r->controllerHandler());
+			
+			if (controller)
+			{
+				switch (request.method)
+				{
+				case http_method_get:
+					response = controller->on_get(request, stream);
+					break;
+				case http_method_post:
+					response = controller->on_post(request, stream);
+					break;
+				case http_method_put:
+					response = controller->on_put(request, stream);
+					break;
+				case http_method_patch:
+					response = controller->on_patch(request, stream);
+					break;
+				case http_method_delete:
+					response = controller->on_delete(request, stream);
+					break;
+				case http_method_head:
+					response = controller->on_head(request, stream);
+					break;
+				case http_method_options:
+					response = controller->on_options(request, stream);
+					break;
+				case http_method_trace:
+					response = controller->on_trace(request, stream);
+					break;
+				case http_method_connect:
+					response = controller->on_connect(request, stream);
+					break;
+				default:
+					response = controller->on_unknown_method(request, stream);
+				}
+			}
+			else
+			{
+				// Out of memory
+				response.content = nullptr;
+				response.statusCode = stw::http_status_code_internal_server_error;
+			}
+		}
 		else
 		{
-				response.content = nullptr;
-				response.statusCode = stw::http_status_code_not_found;
+			// Getting here shouldn't actually ever happen
+			response.content = nullptr;
+			response.statusCode = stw::http_status_code_not_found;
 		}
 
 		return true;

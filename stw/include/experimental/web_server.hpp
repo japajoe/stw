@@ -44,8 +44,9 @@ namespace stw::experimental
 			lastActivity = std::chrono::steady_clock::now();
 			isLocked.store(false);
         }
-        http_context(stw::socket *s) : connection(s)
+		http_context(std::shared_ptr<stw::socket> s)
         {
+			connection = s;
             headerBytesSent = 0;
 			closeConnection = false;
 			requestCount = 0;
@@ -57,10 +58,10 @@ namespace stw::experimental
     struct worker_context
     {
         worker_context();
-        bool enqueue(stw::socket *s);
+		bool enqueue(std::shared_ptr<stw::socket> s);
         void remove(std::shared_ptr<http_context> context, const char *sender);
         std::thread thread;
-        stw::queue<stw::socket*,1024> queue;
+		stw::queue<std::shared_ptr<stw::socket>,1024> queue;
         std::unordered_map<int32_t,std::shared_ptr<http_context>> contexts;
         std::unique_ptr<stw::poller> poller;
 		time_point lastCleanup;

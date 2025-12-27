@@ -22,6 +22,7 @@
 #include "../../stw/include/stw.hpp"
 #include "../../stw/include/core/platform.hpp"
 #include "../../stw/include/experimental/web_server.hpp"
+#include "../../stw/include/experimental/web_controller.hpp"
 #include "../../stw/include/experimental/web_request_router.hpp"
 #include "../../stw/include/net/http.hpp"
 #include "../../stw/include/net/http_server.hpp"

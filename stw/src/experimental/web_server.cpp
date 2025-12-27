@@ -68,40 +68,30 @@ namespace stw::experimental
 
         size_t nextWorker = 0;
 
-		stw::socket *client = nullptr;
-
         while (isRunning.load())
         {
 			try
 			{
-				if(client == nullptr)
-					client = new stw::socket();
+				auto client = std::make_shared<stw::socket>();
 
-				if (listener.accept(client))
+				if (listener.accept(client.get()))
 				{
 					client->set_blocking(false);
 					client->set_no_delay(true);
 
-					if(workers[nextWorker]->enqueue(client))
-						client = nullptr;
-					else
+					if(!workers[nextWorker]->enqueue(client))
 						client->close();
 					nextWorker = (nextWorker + 1) % threadCount;
 				}
 			}
 			catch(const std::bad_alloc &e)
 			{
-				client = nullptr;
 				std::cerr << "Failed to allocate memory for new client " << e.what() << "\n";
 				// Wait a bit for other threads/workers to finish and free up memory
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 				continue;
 			}
         }
-
-		// This socket could be allocated but not used, so delete it
-		if(client)
-			delete client;
 
         for (auto &worker : workers)
         {
@@ -110,10 +100,10 @@ namespace stw::experimental
 			if(worker->thread.joinable())
             	worker->thread.join();
 			
-			stw::socket* orphanedSocket;
+			std::shared_ptr<stw::socket> orphanedSocket;
 			while (worker->queue.try_dequeue(orphanedSocket)) 
 			{
-				delete orphanedSocket; 
+				orphanedSocket.reset();
 			}
         }
 
@@ -163,7 +153,7 @@ namespace stw::experimental
 				worker->lastCleanup = now;
 			}
 
-            stw::socket *newConnection;
+			std::shared_ptr<stw::socket> newConnection;
 
             while (worker->queue.try_dequeue(newConnection))
             {
@@ -545,7 +535,7 @@ namespace stw::experimental
 		keepAliveTime = 15;
     }
 
-    bool worker_context::enqueue(stw::socket *s)
+	bool worker_context::enqueue(std::shared_ptr<stw::socket> s)
     {
         if(queue.enqueue(s))
         {
@@ -563,6 +553,8 @@ namespace stw::experimental
         int32_t fd = context->connection->get_file_descriptor();
         poller->remove(fd);
         context->connection->close();
+		context->connection.reset();
+		context->response.content.reset();
         contexts.erase(fd);
     }
 #endif
