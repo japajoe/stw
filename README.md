@@ -168,13 +168,15 @@ int main()
 
 	router.add<index_controller>("/");
 
-	server.onRequest = [&] (const stw::http_request &request, stw::network_stream *stream) -> stw::http_response {
+	server.onRequest = [&] (const stw::http_request &request, stw::http_stream *stream) -> stw::http_response {
 		// In principle, you just need to set the fields on the http_response object and return it
 		// - The status code is mandatory
 		// - Content can either be nullptr, std::shared_ptr<stw::memory_stream> or std::shared_ptr<stw::file_stream>
 		// - Content passed in memory stream must be copied (pass true as last parameter to constructor)
 		// - Content-Type header must be set if the stream is set
 		// - Other headers are optional
+
+		// The http_stream may have data to read, see request content length field and see headers for content type
 		
 		stw::http_response response;
 
