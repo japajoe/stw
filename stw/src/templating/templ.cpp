@@ -48,7 +48,7 @@ ${INCLUDES}
 
 namespace stw
 {
-	struct http_request_info;
+	struct http_request;
 	struct http_response_info;
 }
 
