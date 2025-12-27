@@ -161,7 +161,6 @@ namespace stw
 
 					if((nowMilliseconds - lastActivityMilliseconds) > (worker->keepAliveTime * 1000))
 					{
-						std::cout << "Cleaning up connection\n";
 						int32_t fd = context->connection->get_file_descriptor();
 						worker->poller->remove(fd);
 						context->connection->close();
