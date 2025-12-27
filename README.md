@@ -10,12 +10,10 @@ A library for making web based applications.
 # Requirements for Linux
 - libcurl (libcurl.so)
 - libssl (libssl.so)
-- libcrypto (libcrypto.so)
 
 # Requirements for Windows
 - libcurl (libcurl-x64.dll)
 - libssl (libssl-3-x64.dll)
-- libcrypto (libcrypto-3-x64.dll)
 
 # Requirements for Mac
 - Work in progress, but the `stw::socket` class does work on Mac as it is.

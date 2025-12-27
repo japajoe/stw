@@ -17,6 +17,7 @@
 // SOFTWARE.
 
 #include "web_socket.hpp"
+#include "../system/crypto.hpp"
 #include "../system/string.hpp"
 #include <cstring>
 #include <sstream>

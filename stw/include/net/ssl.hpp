@@ -75,13 +75,6 @@ namespace stw
 	private:
 		SSL *pSsl;
 	};
-
-	class crypto
-	{
-	public:
-		static std::string base64_encode(const uint8_t* buffer, size_t size);
-		static uint8_t *create_sha1_hash(const uint8_t *d, size_t n, uint8_t *md);
-	};
 }
 
 #endif
