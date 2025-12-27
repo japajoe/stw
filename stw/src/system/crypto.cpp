@@ -1,3 +1,21 @@
+// MIT License
+// Copyright © 2025 W.M.R Jap-A-Joe
+
+// Permission is hereby granted, free of charge, to any person obtaining a copy of
+// this software and associated documentation files (the "Software"), to deal in
+// the Software without restriction, including without limitation the rights to
+// use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+// of the Software, and to permit persons to whom the Software is furnished to do
+// so.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
 #include "crypto.hpp"
 #include <vector>
 #include <cstring>
@@ -13,7 +31,8 @@ namespace stw::crypto
 	{
 		static const char lookup[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 		std::string out;
-		int val = 0, valb = -6;
+		int32_t val = 0;
+		int32_t valb = -6;
 		for (size_t i = 0; i < size; i++)
 		{
 			val = (val << 8) + buffer[i];
@@ -33,32 +52,36 @@ namespace stw::crypto
 
 	uint8_t *create_sha1_hash(const uint8_t *d, size_t n, uint8_t *md)
 	{
-		uint32_t h0 = 0x67452301, h1 = 0xEFCDAB89, h2 = 0x98BADCFE, h3 = 0x10325476, h4 = 0xC3D2E1F0;
+		uint32_t h0 = 0x67452301;
+		uint32_t h1 = 0xEFCDAB89;
+		uint32_t h2 = 0x98BADCFE;
+		uint32_t h3 = 0x10325476;
+		uint32_t h4 = 0xC3D2E1F0;
 
 		// Pre-processing: Padding the message
 		std::vector<uint8_t> msg(d, d + n);
-		uint64_t bit_len = n * 8;
+		uint64_t bitLength = n * 8;
 		msg.push_back(0x80);
 		while ((msg.size() + 8) % 64 != 0)
 			msg.push_back(0x00);
 		for (int i = 7; i >= 0; i--)
-			msg.push_back((bit_len >> (i * 8)) & 0xFF);
+			msg.push_back((bitLength >> (i * 8)) & 0xFF);
 
 		// Process in 512-bit chunks
 		for (size_t i = 0; i < msg.size(); i += 64)
 		{
 			uint32_t w[80];
-			for (int j = 0; j < 16; j++)
+			for (uint32_t j = 0; j < 16; j++)
 			{
 				w[j] = (msg[i + j * 4] << 24) | (msg[i + j * 4 + 1] << 16) |
 					   (msg[i + j * 4 + 2] << 8) | (msg[i + j * 4 + 3]);
 			}
-			for (int j = 16; j < 80; j++)
+			for (uint32_t j = 16; j < 80; j++)
 				w[j] = left_rotate(w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16], 1);
 
 			uint32_t a = h0, b = h1, c = h2, d_v = h3, e = h4;
 
-			for (int j = 0; j < 80; j++)
+			for (uint32_t j = 0; j < 80; j++)
 			{
 				uint32_t f, k;
 				if (j < 20)
