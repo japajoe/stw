@@ -137,7 +137,6 @@ If successful, the generated files will be in the output directory. The class na
 
 ```cpp
 #include "stw/stw.hpp"
-#include "stw/net/http_server.hpp"
 #include "index_view.html" //Assuming you have a class called index_view
 
 class index_controller : public stw::http_controller
