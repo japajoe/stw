@@ -1,5 +1,5 @@
 /.vscode
 /build
-/web
+/server
 CMakeLists.txt
 .clang-format
