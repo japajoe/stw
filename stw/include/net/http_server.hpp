@@ -4,6 +4,7 @@
 #include "socket.hpp"
 #include "poller.hpp"
 #include "http.hpp"
+#include "http_config.hpp"
 #include "network_stream.hpp"
 #include "../system/thread_pool.hpp"
 #include "../system/queue.hpp"
@@ -76,9 +77,10 @@ namespace stw
     public:
         request_handler onRequest;
         http_server();
-        int run(const std::string &bindAddress, uint16_t port, uint32_t backlog);
+        int run(const stw::http_config &config);
     private:
         stw::socket listener;
+		stw::http_config config;
         std::atomic<bool> isRunning;
         std::unique_ptr<stw::thread_pool> threadPool;
         void network_loop(http_worker_context *worker);

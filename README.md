@@ -197,7 +197,7 @@ int main()
 		}
 	};
 
-	return server.run(config.bindAddress, config.portHttp, 4096);
+	return server.run(config);
 }
 ```
 

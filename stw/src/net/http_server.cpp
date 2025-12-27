@@ -35,18 +35,20 @@ namespace stw
     #endif
     }
 
-    int http_server::run(const std::string &bindAddress, uint16_t port, uint32_t backlog)
+    int http_server::run(const stw::http_config &config)
     {
         if (isRunning.load())
             return 1;
 
+		this->config = config;
+
 		if(!onRequest)
 			throw std::runtime_error("onRequest callback is not set"); 
 
-        if (!listener.bind(bindAddress, port))
+        if (!listener.bind(config.bindAddress, config.portHttp))
             return 2;
 
-        if (!listener.listen(backlog))
+        if (!listener.listen(4096))
             return 3;
 
         listener.set_timeout(1);
@@ -64,7 +66,7 @@ namespace stw
             workers.back()->thread = std::thread(&http_server::network_loop, this, workers.back().get());
         }
 
-        std::cout << "Server started listening on http://" << bindAddress << ":" << port << '\n';
+        std::cout << "Server started listening on http://" << config.bindAddress << ":" << config.portHttp << '\n';
 
         size_t nextWorker = 0;
 
@@ -219,8 +221,7 @@ namespace stw
             
             if (bytesRead > 0) 
             {
-				const uint32_t MAX_HEADER_SIZE = 16384;
-				if (context->requestBuffer.size() + bytesRead > MAX_HEADER_SIZE) 
+				if (context->requestBuffer.size() + bytesRead > config.maxHeaderSize) 
 				{
 					send_response(worker, context, 431);
 					return;
