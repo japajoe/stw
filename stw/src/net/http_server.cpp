@@ -330,9 +330,6 @@ namespace stw
 		responseStream << "HTTP/1.1 " << context->response.statusCode << "\r\n";
 
 		// We do not convert the response header keys to lower case
-		if(context->response.contentType.size() > 0)
-			responseStream << "Content-Type: " << context->response.contentType << "\r\n";
-
 		if(context->response.content)
 			responseStream << "Content-Length: " << context->response.content->get_length() << "\r\n";
 		else

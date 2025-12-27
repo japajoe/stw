@@ -147,7 +147,7 @@ public:
 		auto responseInfo = view.get(&request);
 		stw::http_response response;
 		response.statusCode = stw::http_status_code_ok;
-		response.contentType = "text/html";
+		response.headers["Content-Type"] = responseInfo->contentType;
 		response.content = std::make_shared<stw::memory_stream>(responseInfo->content.data(), responseInfo->content.size(), true);
 		return response;
 	}
@@ -173,8 +173,8 @@ int main()
 		// - The status code is mandatory
 		// - Content can either be nullptr, std::shared_ptr<stw::memory_stream> or std::shared_ptr<stw::file_stream>
 		// - Content passed in memory stream must be copied (pass true as last parameter to constructor)
-		// - Content type must be set if the stream is set
-		// - Headers are optional
+		// - Content-Type header must be set if the stream is set
+		// - Other headers are optional
 		
 		stw::http_response response;
 
@@ -192,7 +192,7 @@ int main()
 			{
 				response.statusCode = stw::http_status_code_ok;
 				response.content = std::make_shared<stw::file_stream>(path, stw::file_access_read);
-				response.contentType = stw::get_http_content_type(path);
+				response.headers["Content-Type"] = stw::get_http_content_type(path);
 				response.headers["Cache-Control"] = "max-age=3600";
 			}
 			else

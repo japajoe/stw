@@ -142,7 +142,6 @@ namespace stw
 	struct http_response
 	{
 		uint32_t statusCode;
-		std::string contentType;
 		http_headers headers;
 		std::shared_ptr<stw::stream> content;
 		http_response();
