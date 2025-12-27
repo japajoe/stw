@@ -22,17 +22,19 @@
 
 namespace stw
 {
-	// Helper function to translate file_access to open mode
 	static std::ios_base::openmode access_to_openmode(file_access access)
 	{
+		//Prevents Windows line-ending translation
+		const std::ios_base::openmode mode = std::ios::binary;
+
 		switch (access)
 		{
 		case file_access_read:
-			return std::ios::in;
+			return mode | std::ios::in;
 		case file_access_write:
-			return std::ios::out | std::ios::trunc;  // Truncate the file if it exists
+			return mode | std::ios::out | std::ios::trunc;  // Truncate the file if it exists
 		case file_access_read_write:
-			return std::ios::in | std::ios::out;
+			return mode | std::ios::in | std::ios::out;
 		default:
 			throw std::invalid_argument("Invalid file access type");
 		}
