@@ -160,12 +160,12 @@ int main()
 {
 	stw::load_library();
 
+	stw::http_server_configuration config;
+	stw::http_server server;
+	stw::http_request_router router;
+
 	if(!config.load_from_file("config.ini"))
 		return 1;
-
-	stw::http_server server;
-	stw::http_server_configuration config;
-	stw::http_request_router router;
 
 	router.add<index_controller>("/");
 
