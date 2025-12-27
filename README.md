@@ -169,6 +169,13 @@ int main()
 	router.add<index_controller>("/");
 
 	server.onRequest = [&] (const stw::http_request &request, stw::network_stream *stream) -> stw::http_response {
+		// In principle, you just need to set the fields on the http_response object and return it
+		// - The status code is mandatory
+		// - Content can either be nullptr, std::shared_ptr<stw::memory_stream> or std::shared_ptr<stw::file_stream>
+		// - Content passed in memory stream must be copied (pass true as last parameter to constructor)
+		// - Content type must be set if the stream is set
+		// - Headers are optional
+		
 		stw::http_response response;
 
 		if(router.process_request(request, stream, response))
@@ -185,7 +192,7 @@ int main()
 			{
 				response.statusCode = stw::http_status_code_ok;
 				response.content = std::make_shared<stw::file_stream>(path, stw::file_access_read);
-				response.headers["Content-Type"] = stw::get_http_content_type(path);
+				response.contentType = stw::get_http_content_type(path);
 				response.headers["Cache-Control"] = "max-age=3600";
 			}
 			else
