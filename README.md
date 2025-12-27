@@ -164,7 +164,7 @@ int main()
 	stw::http_request_router router;
 
 	if(!config.load_from_file("config.ini"))
-		return 1;
+		return -1;
 
 	router.add<index_controller>("/");
 
