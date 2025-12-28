@@ -27,7 +27,7 @@
 	#define STW_PLATFORM_LINUX
 #endif
 
-#if defined(_BSD_)
+#if defined(__FreeBSD__)
 	#define STW_PLATFORM_BSD
 #endif
 
