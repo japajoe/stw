@@ -75,7 +75,7 @@ namespace stw::runtime
 			return;
 #if defined(STW_PLATFORM_WINDOWS)
 		FreeLibrary((HINSTANCE)libraryHandle);
-#elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC) || defined(STW_PLATFOM_BSD)
+#elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC) || defined(STW_PLATFORM_BSD)
 		dlclose(libraryHandle);
 #endif
 	}
@@ -91,7 +91,7 @@ namespace stw::runtime
 		s = (void *)GetProcAddress((HINSTANCE)libraryHandle, symbolName.c_str());
 		if (s == nullptr)
 			std::cout << "Error: undefined symbol: " << symbolName << '\n';
-#elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC) || defined(STW_PLATFOM_BSD)
+#elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC) || defined(STW_PLATFORM_BSD)
 		dlerror(); /* clear error code */
 		s = dlsym(libraryHandle, symbolName.c_str());
 		char *error = dlerror();
@@ -176,7 +176,7 @@ namespace stw::runtime
 #if defined(STW_PLATFORM_WINDOWS)
 		if (!SetCurrentDirectory(directoryPath.c_str()))
 			throw std::runtime_error("Failed to change directory: " + directoryPath);
-#elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC) || defined(STW_PLATFOM_BSD)
+#elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC) || defined(STW_PLATFORM_BSD)
 		if (chdir(directoryPath.c_str()) != 0)
 			throw std::runtime_error("Failed to change directory: " + directoryPath);
 #endif
@@ -189,7 +189,7 @@ namespace stw::runtime
 #if defined(STW_PLATFORM_WINDOWS)
 		if (!GetCurrentDirectory(PATH_MAX_LENGTH, buffer))
 			throw std::runtime_error("Failed to get current directory");
-#elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC) || defined(STW_PLATFOM_BSD)
+#elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC) || defined(STW_PLATFORM_BSD)
 		if (getcwd(buffer, sizeof(buffer)) == nullptr)
 			throw std::runtime_error("Failed to get current directory");
 #endif
@@ -200,7 +200,7 @@ namespace stw::runtime
 	{
 		//Source: https://gist.github.com/meritozh/f0351894a2a4aa92871746bf45879157
 		std::string command = cmd;
-#if defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC)
+#if defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC) || defined(STW_PLATFORM_BSD)
 		for(const auto &arg : args)
 		{
 			command += " " + arg;
