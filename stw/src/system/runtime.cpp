@@ -52,7 +52,7 @@ namespace stw::runtime
 		moduleHandle = (void *)LoadLibrary(filePath.c_str());
 		if (!moduleHandle)
 			std::cout << "Failed to load plugin: " << filePath << '\n';
-#elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC) || defined(STW_PLATFOM_BSD)
+#elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC) || defined(STW_PLATFORM_BSD)
 		moduleHandle = dlopen(filePath.c_str(), RTLD_LAZY);
 		std::cout << "Trying to load " << filePath << '\n';
 		if (!moduleHandle)
