@@ -23,8 +23,12 @@
 	#define STW_PLATFORM_WINDOWS
 #endif
 
-#if defined(__linux__) || defined(__FreeBSD__)
+#if defined(__linux__)
 	#define STW_PLATFORM_LINUX
+#endif
+
+#if defined(__FreeBSD__)
+	#define STW_PLATFORM_BSD
 #endif
 
 #if defined(__APPLE__)

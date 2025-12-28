@@ -112,10 +112,15 @@ namespace stw::runtime
 		libraryPath = std::string(outputPath);
 		delete[] outputPath;
 		return true;
-#elif defined(STW_PLATFORM_LINUX)
+#elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_BSD)
 		// Prepare the command to search the library
 		char cmd[256];
+
+	#ifdef STW_PLATFORM_LINUX
 		snprintf(cmd, sizeof(cmd), "ldconfig -p 2>/dev/null | grep %s", libraryName.c_str());
+	#else
+		snprintf(cmd, sizeof(cmd), "ldconfig -r | grep %s", libraryName.c_str());
+	#endif
 
 		FILE *pipe = popen(cmd, "r");
 

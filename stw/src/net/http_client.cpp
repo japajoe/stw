@@ -354,7 +354,7 @@ namespace stw
 			
 		#if defined(STW_PLATFORM_WINDOWS)
 			curlPath = "libcurl-x64.dll";
-		#elif defined(STW_PLATFORM_LINUX)
+		#elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_BSD)
 			stw::runtime::find_library_path("libcurl.so", curlPath);
 		#elif defined(STW_PLATFORM_MAC)
 			//Not implemented yet
