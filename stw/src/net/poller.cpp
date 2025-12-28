@@ -90,14 +90,14 @@ namespace stw
 		}
 
 		// Trigger the poller to wake up from wait()
-		void notify()
+		void notify() override
 		{
 			uint64_t signal = 1;
 			// Writing to eventfd increments its internal counter and wakes epoll
 			write(notifyFD, &signal, sizeof(signal));
 		}
 
-		int32_t wait(std::vector<poll_event_result> &results, int32_t timeout)
+		int32_t wait(std::vector<poll_event_result> &results, int32_t timeout) override
 		{
 			int nfds = epoll_wait(epollFD, revents.data(), revents.size(), timeout);
 
@@ -193,7 +193,7 @@ namespace stw
 			return true;
 		}
 
-		void notify()
+		void notify() override
 		{
 			struct kevent kev;
 			// Ident 0, User filter. This is the kqueue equivalent of eventfd.
@@ -201,7 +201,7 @@ namespace stw
 			kevent(kqueueFD, &kev, 1, nullptr, 0, nullptr);
 		}
 
-		int32_t wait(std::vector<poll_event_result> &results, int32_t timeout_ms)
+		int32_t wait(std::vector<poll_event_result> &results, int32_t timeout_ms) override
 		{
 			struct timespec ts;
 			ts.tv_sec = timeout_ms / 1000;
@@ -334,13 +334,13 @@ namespace stw
 			return false;
 		}
 
-		void notify()
+		void notify() override
 		{
 			char signal = 1;
 			send(notifySend, &signal, 1, 0);
 		}
 
-		int32_t wait(std::vector<poll_event_result> &results, int32_t timeout)
+		int32_t wait(std::vector<poll_event_result> &results, int32_t timeout) override
 		{
 			// Only copy if the interest list actually changed
 			{
