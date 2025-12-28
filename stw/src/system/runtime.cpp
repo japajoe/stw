@@ -42,7 +42,7 @@ namespace stw::runtime
 	{
 		if (!std::filesystem::exists(std::filesystem::path(filePath)))
 		{
-			std::cerr << "File not found: " << filePath << '\n';
+			std::cout << "File not found: " << filePath << '\n';
 			return nullptr;
 		}
 
@@ -51,13 +51,17 @@ namespace stw::runtime
 #if defined(STW_PLATFORM_WINDOWS)
 		moduleHandle = (void *)LoadLibrary(filePath.c_str());
 		if (!moduleHandle)
-			std::cerr << "Failed to load plugin: " << filePath << '\n';
+			std::cout << "Failed to load plugin: " << filePath << '\n';
 #elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC) || defined(STW_PLATFOM_BSD)
 		moduleHandle = dlopen(filePath.c_str(), RTLD_LAZY);
 		if (!moduleHandle)
 		{
 			char *error = dlerror();
-			std::cerr << "Failed to load plugin: " << filePath << ". Error: " << error << '\n';
+			std::cout << "Failed to load plugin: " << filePath << ". Error: " << error << '\n';
+		}
+		else
+		{
+			std::cout << "Module " << filePath << " " << (uint64_t)moduleHandle << '\n';
 		}
 #endif
 
@@ -85,14 +89,14 @@ namespace stw::runtime
 #if defined(STW_PLATFORM_WINDOWS)
 		s = (void *)GetProcAddress((HINSTANCE)libraryHandle, symbolName.c_str());
 		if (s == nullptr)
-			std::cerr << "Error: undefined symbol: " << symbolName << '\n';
+			std::cout << "Error: undefined symbol: " << symbolName << '\n';
 #elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC) || defined(STW_PLATFOM_BSD)
 		dlerror(); /* clear error code */
 		s = dlsym(libraryHandle, symbolName.c_str());
 		char *error = dlerror();
 
 		if (error != nullptr)
-			std::cerr << "Error: " << error << '\n';
+			std::cout << "Error: " << error << '\n';
 #endif
 
 		return s;
@@ -126,7 +130,7 @@ namespace stw::runtime
 
 		if (!pipe)
 		{
-			std::cerr << "popen() failed\n";
+			std::cout << "popen() failed\n";
 			return false;
 		}
 
