@@ -207,7 +207,10 @@ namespace stw
 			libraryHandle = stw::runtime::load_library(libraryPath);
 
 			if(!libraryHandle)
+			{
+				std::cout << "Library failed to load: " << libraryPath << '\n';
 				return false;
+			}
 			
 			curl_global_init_ptr = (curl_global_init_t)stw::runtime::get_symbol(libraryHandle, "curl_global_init");
 			curl_global_cleanup_ptr = (curl_global_cleanup_t)stw::runtime::get_symbol(libraryHandle, "curl_global_cleanup");
@@ -363,10 +366,8 @@ namespace stw
 		
 			if(curlPath.size() > 0)
 			{
-				printf("Library path: %s\n", curlPath.c_str());
 				if(load_library(curlPath))
 				{
-					printf("Curl loaded\n");
 					global_init(CURL_GLOBAL_DEFAULT);
 					return true;
 				}
