@@ -30,14 +30,7 @@ namespace stw
 		if(!handler)
 			throw std::runtime_error("request handler must be set");
 
-		http_route r = {
-			.regex = route,
-			.method = method,
-			.requestHandler = handler,
-			.controllerHandler = nullptr
-		};
-
-		routes.push_back(r);
+		routes.emplace_back(route, method, handler, nullptr);
 	}
 
 	http_request_router::http_route *http_request_router::get(const std::string &route)

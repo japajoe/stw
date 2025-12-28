@@ -44,30 +44,14 @@ namespace stw
 		void add(const std::string &route) 
 		{
             static_assert(std::is_base_of<http_controller, T>::value, "http_request_router::add parameter T must derive from http_controller");
-
-			http_route r = {
-				.regex = std::regex(route),
-				.method = http_method_unknown,
-				.requestHandler = nullptr,
-				.controllerHandler = []() { return std::make_unique<T>(); }
-			};
-
-			routes.push_back(r);
+			routes.emplace_back(std::regex(route), http_method_unknown, nullptr, []() { return std::make_unique<T>(); });
 		}
 		
 		template <typename T>
 		void add(const std::regex &route) 
 		{
             static_assert(std::is_base_of<http_controller, T>::value, "http_request_router::add parameter T must derive from http_controller");
-
-			http_route r = {
-				.regex = route,
-				.method = http_method_unknown,
-				.requestHandler = nullptr,
-				.controllerHandler = []() { return std::make_unique<T>(); }
-			};
-
-			routes.push_back(r);
+			routes.emplace_back(route, http_method_unknown, nullptr, []() { return std::make_unique<T>(); });
 		}
 
 	private:
