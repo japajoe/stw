@@ -179,11 +179,8 @@ namespace stw
 			std::string sslPath;
 		#if defined(STW_PLATFORM_WINDOWS)
 			sslPath = "libssl-3-x64.dll";
-		#elif defined(STW_PLATFORM_LINUX)
+		#elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_BSD)
 			stw::runtime::find_library_path("libssl.so", sslPath);
-		#elif defined(STW_PLATFORM_BSD)
-			//Not implemented yet
-			return false;
 		#elif defined(STW_PLATFORM_MAC)
 			//Not implemented yet
 			return false;
