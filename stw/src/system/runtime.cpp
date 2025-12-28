@@ -120,6 +120,7 @@ namespace stw::runtime
 		snprintf(cmd, sizeof(cmd), "ldconfig -p 2>/dev/null | grep %s", libraryName.c_str());
 	#else
 		snprintf(cmd, sizeof(cmd), "ldconfig -r | grep %s", libraryName.c_str());
+		printf("Command %s\n", cmd);
 	#endif
 
 		FILE *pipe = popen(cmd, "r");
