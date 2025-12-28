@@ -33,7 +33,6 @@ namespace stw
 		http_stream(std::shared_ptr<stw::socket> socket, void *initialContent, uint64_t initialContentLength);
 		~http_stream();
 		int64_t read(void *buffer, size_t size);
-		int64_t write(const void *buffer, size_t size);
 	private:
 		std::shared_ptr<stw::socket> socket;
 		void *initialContent;

@@ -84,11 +84,4 @@ namespace stw
 
 		return socket->read(buffer, size);
 	}
-
-	int64_t http_stream::write(const void *buffer, size_t size)
-	{
-		if(socket == nullptr)
-			return 0;
-		return socket->write(buffer, size);
-	}
 }
