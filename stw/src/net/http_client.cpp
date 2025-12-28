@@ -208,7 +208,6 @@ namespace stw
 
 			if(!libraryHandle)
 			{
-				std::cout << "Library failed to load: " << libraryPath << '\n';
 				return false;
 			}
 			
