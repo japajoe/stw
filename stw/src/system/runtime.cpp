@@ -23,7 +23,7 @@
 	#include <windows.h>
 #endif
 
-#if defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC) || defined(STW_PLATFOM_BSD)
+#if defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC) || defined(STW_PLATFORM_BSD)
 	#include <dlfcn.h>
 	#include <unistd.h>
 	#include <limits.h>
