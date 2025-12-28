@@ -153,9 +153,11 @@ namespace stw
 	class kqueue_poller : public poller
 	{
 	public:
-		kqueue_poller() : fd_to_idx(65536, -1) // Pre-allocate for max FDs
+		kqueue_poller()
 		{
 			events.resize(1024);
+			// Pre-allocate to handle common max FD limits; will resize if needed in wait()
+			fd_to_idx.assign(65536, -1); 
 			kqueueFD = kqueue();
 
 			struct kevent kev;
@@ -163,45 +165,40 @@ namespace stw
 			kevent(kqueueFD, &kev, 1, nullptr, 0, nullptr);
 		}
 
-        ~kqueue_poller()
-        {
-            if (kqueueFD != -1)
-                close(kqueueFD);
-        }
+		~kqueue_poller()
+		{
+			if (kqueueFD != -1)
+				close(kqueueFD);
+		}
 
-        bool add(int fd, poll_event_flag flags) override
-        {
-            std::lock_guard<std::mutex> lock(mtx);
-            // Use EV_ADD | EV_ENABLE for new descriptors
-            return ctl(fd, flags, EV_ADD | EV_ENABLE);
-        }
+		bool add(int fd, poll_event_flag flags) override
+		{
+			std::lock_guard<std::mutex> lock(mtx);
+			return ctl(fd, flags, EV_ADD | EV_ENABLE);
+		}
 
-        bool modify(int32_t fd, poll_event_flag flags) override
-        {
-            std::lock_guard<std::mutex> lock(mtx);
-            // In kqueue, EV_ADD updates existing filters. 
-            // Our ctl helper handles deleting unused filters.
-            return ctl(fd, flags, EV_ADD | EV_ENABLE);
-        }
+		bool modify(int32_t fd, poll_event_flag flags) override
+		{
+			std::lock_guard<std::mutex> lock(mtx);
+			return ctl(fd, flags, EV_ADD | EV_ENABLE);
+		}
 
-        bool remove(int32_t fd) override
-        {
-            std::lock_guard<std::mutex> lock(mtx);
-            struct kevent kev[2];
-            // We ignore errors here because we don't know if both READ and WRITE existed
-            EV_SET(&kev[0], fd, EVFILT_READ, EV_DELETE, 0, 0, nullptr);
-            EV_SET(&kev[1], fd, EVFILT_WRITE, EV_DELETE, 0, 0, nullptr);
-            kevent(kqueueFD, kev, 2, nullptr, 0, nullptr);
-            return true;
-        }
+		bool remove(int32_t fd) override
+		{
+			std::lock_guard<std::mutex> lock(mtx);
+			struct kevent kev[2];
+			EV_SET(&kev[0], fd, EVFILT_READ, EV_DELETE, 0, 0, nullptr);
+			EV_SET(&kev[1], fd, EVFILT_WRITE, EV_DELETE, 0, 0, nullptr);
+			kevent(kqueueFD, kev, 2, nullptr, 0, nullptr);
+			return true;
+		}
 
-        void notify() override
-        {
-            struct kevent kev;
-            // Trigger the user event registered in the constructor
-            EV_SET(&kev, 0, EVFILT_USER, 0, NOTE_TRIGGER, 0, nullptr);
-            kevent(kqueueFD, &kev, 1, nullptr, 0, nullptr);
-        }
+		void notify() override
+		{
+			struct kevent kev;
+			EV_SET(&kev, 0, EVFILT_USER, 0, NOTE_TRIGGER, 0, nullptr);
+			kevent(kqueueFD, &kev, 1, nullptr, 0, nullptr);
+		}
 
 		int32_t wait(std::vector<poll_event_result> &results, int32_t timeout_ms) override
 		{
@@ -213,71 +210,82 @@ namespace stw
 				timeout_ptr = &ts;
 			}
 
-			// 1. Get events from kernel
 			int32_t n = kevent(kqueueFD, nullptr, 0, events.data(), events.size(), timeout_ptr);
 			
-			// 2. Process events using Direct Indexing (No Map!)
+			// We do not clear the whole vector; we only reset used entries at the end.
 			for (int i = 0; i < n; ++i)
 			{
-				if (events[i].filter == EVFILT_USER) continue;
+				if (events[i].filter == EVFILT_USER)
+					continue;
 
 				int32_t fd = static_cast<int32_t>(events[i].ident);
-				
-				// Boundary check for safety
-				if (fd >= (int)fd_to_idx.size()) fd_to_idx.resize(fd + 1024, -1);
 
-				int32_t idx = fd_to_idx[fd];
-				if (idx != -1)
+				// Safety check for vector bounds
+				if (__predict_false(fd >= (int32_t)fd_to_idx.size())) {
+					fd_to_idx.resize(fd + 1024, -1);
+				}
+
+				int32_t existing_idx = fd_to_idx[fd];
+				if (existing_idx != -1)
 				{
-					map_flags(events[i], results[idx]);
+					map_flags(events[i], results[existing_idx]);
 				}
 				else
 				{
-					fd_to_idx[fd] = static_cast<int32_t>(results.size());
 					poll_event_result res = {fd, 0};
 					map_flags(events[i], res);
+					fd_to_idx[fd] = (int32_t)results.size();
 					results.push_back(res);
 				}
 			}
 
-			// 3. Reset the lookup array for the NEXT call efficiently
-			for (const auto& res : results) {
-				fd_to_idx[res.fd] = -1;
+			int32_t total_results = (int32_t)results.size();
+
+			// Efficiently reset only the indices we touched so fd_to_idx is clean for next call
+			for (int i = 0; i < total_results; ++i) {
+				fd_to_idx[results[i].fd] = -1;
 			}
 
-			return static_cast<int32_t>(results.size());
+			return total_results;
 		}
 
 	private:
 		int32_t kqueueFD;
 		std::vector<struct kevent> events;
-		
-		// CHANGE: Use a vector as a Direct Address Table (O(1) lookup, no hashing)
+		// Direct Address Table: Index is FD, Value is index in results vector
 		std::vector<int32_t> fd_to_idx; 
 		std::mutex mtx;
 
-		// ... (map_flags is fine) ...
+		void map_flags(const struct kevent &ev, poll_event_result &res)
+		{
+			if (ev.filter == EVFILT_READ) res.flags |= poll_event_read;
+			if (ev.filter == EVFILT_WRITE) res.flags |= poll_event_write;
+			if (ev.flags & EV_ERROR) res.flags |= poll_event_error;
+			if (ev.flags & EV_EOF) res.flags |= poll_event_disconnect;
+		}
 
 		bool ctl(int32_t fd, uint32_t flags, uint16_t action)
 		{
-			// PERFORMANCE FIX: Don't call kevent() multiple times inside ctl.
-			// Prepare one batch and send it in one system call.
 			struct kevent kev[2];
 			int n = 0;
 
-			// Add/Update Read
 			if (flags & poll_event_read)
 				EV_SET(&kev[n++], fd, EVFILT_READ, action, 0, 0, nullptr);
-			else
-				EV_SET(&kev[n++], fd, EVFILT_READ, EV_DELETE, 0, 0, nullptr);
+			else {
+				struct kevent del_kev;
+				EV_SET(&del_kev, fd, EVFILT_READ, EV_DELETE, 0, 0, nullptr);
+				kevent(kqueueFD, &del_kev, 1, nullptr, 0, nullptr);
+			}
 
-			// Add/Update Write
 			if (flags & poll_event_write)
 				EV_SET(&kev[n++], fd, EVFILT_WRITE, action, 0, 0, nullptr);
-			else
-				EV_SET(&kev[n++], fd, EVFILT_WRITE, EV_DELETE, 0, 0, nullptr);
+			else {
+				struct kevent del_kev;
+				EV_SET(&del_kev, fd, EVFILT_WRITE, EV_DELETE, 0, 0, nullptr);
+				kevent(kqueueFD, &del_kev, 1, nullptr, 0, nullptr);
+			}
 
-			// We ignore EV_DELETE errors here because a filter might not exist
+			if (n == 0) return true;
 			return kevent(kqueueFD, kev, n, nullptr, 0, nullptr) != -1;
 		}
 	};
