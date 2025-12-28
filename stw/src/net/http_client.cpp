@@ -363,6 +363,7 @@ namespace stw
 		
 			if(curlPath.size() > 0)
 			{
+				printf("Library path: %s\n", curlPath.c_str());
 				if(load_library(curlPath))
 				{
 					global_init(CURL_GLOBAL_DEFAULT);
