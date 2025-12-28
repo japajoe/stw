@@ -135,6 +135,7 @@ namespace stw::runtime
 
 		while (fgets(result, sizeof(result), pipe) != NULL)
 		{
+			printf("Result: %s\n", result);
 			// Find the path after the "=>" symbol
 			char *pos = strstr(result, "=>");
 			if (pos != NULL)
