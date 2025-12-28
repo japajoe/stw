@@ -16,16 +16,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "http_request_router.hpp"
+#include "http_router.hpp"
 
 namespace stw
 {
-	void http_request_router::add(http_method method, const std::string &route, http_request_handler handler)
+	void http_router::add(http_method method, const std::string &route, http_request_handler handler)
 	{
 		add(method, std::regex(route), handler);
 	}
 
-	void http_request_router::add(http_method method, const std::regex &route, http_request_handler handler)
+	void http_router::add(http_method method, const std::regex &route, http_request_handler handler)
 	{
 		if(!handler)
 			throw std::runtime_error("request handler must be set");
@@ -33,7 +33,7 @@ namespace stw
 		routes.emplace_back(route, method, handler, nullptr);
 	}
 
-	http_request_router::http_route *http_request_router::get(const std::string &route)
+	http_router::http_route *http_router::get(const std::string &route)
 	{
 		for (auto &r : routes)
 		{
@@ -46,7 +46,7 @@ namespace stw
 		return nullptr;
 	}
 
-	bool http_request_router::process_request(const http_request &request, http_stream *stream, http_response &response)
+	bool http_router::process_request(const http_request &request, http_stream *stream, http_response &response)
 	{
 		auto r = get(request.path);
 

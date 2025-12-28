@@ -136,7 +136,7 @@ If successful, the generated files will be in the output directory. The class na
 ```cpp
 #include "stw/include/stw.hpp" //Or wherever you decided to put the headers
 #include "stw/include/net/http_server.hpp" 
-#include "stw/include/net/http_request_router.hpp"
+#include "stw/include/net/http_router.hpp"
 #include "index_view.html" //Assuming you have a class called index_view
 
 class index_controller : public stw::http_controller
@@ -161,7 +161,7 @@ int main()
 
 	stw::http_server_configuration config;
 	stw::http_server server;
-	stw::http_request_router router;
+	stw::http_router router;
 
 	if(!config.load_from_file("config.ini"))
 		return -1;

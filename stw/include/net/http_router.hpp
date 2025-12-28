@@ -16,8 +16,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef STW_HTTP_REQUEST_ROUTER_HPP
-#define STW_HTTP_REQUEST_ROUTER_HPP
+#ifndef STW_HTTP_ROUTER_HPP
+#define STW_HTTP_ROUTER_HPP
 
 #include "http.hpp"
 #include "http_stream.hpp"
@@ -31,9 +31,8 @@
 namespace stw
 {
 	using http_request_handler = std::function<http_response(const http_request &request, http_stream *stream)>;
-	using http_controller_handler = std::function<std::unique_ptr<http_controller>()>;
 
-	class http_request_router
+	class http_router
 	{
 	public:
 		bool process_request(const http_request &request, http_stream *stream, http_response &response);
@@ -60,7 +59,7 @@ namespace stw
 			std::regex regex;
 			http_method method;
 			http_request_handler requestHandler;
-			http_controller_handler controllerHandler;
+			std::function<std::unique_ptr<http_controller>()> controllerHandler;
 		};
 
 		std::vector<http_route> routes;
