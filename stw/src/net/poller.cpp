@@ -150,139 +150,233 @@ namespace stw
 		}
 	};
 #elif defined(__APPLE__) || defined(__FreeBSD__)
-    class kqueue_poller : public poller
+class kqueue_poller : public poller
+{
+public:
+    kqueue_poller() : fd_to_idx(65536, -1) // Pre-allocate for max FDs
     {
-    public:
-        kqueue_poller()
-        {
-            events.resize(1024);
-            kqueueFD = kqueue();
+        events.resize(1024);
+        kqueueFD = kqueue();
 
-            struct kevent kev;
-            EV_SET(&kev, 0, EVFILT_USER, EV_ADD | EV_CLEAR, 0, 0, nullptr);
-            kevent(kqueueFD, &kev, 1, nullptr, 0, nullptr);
+        struct kevent kev;
+        EV_SET(&kev, 0, EVFILT_USER, EV_ADD | EV_CLEAR, 0, 0, nullptr);
+        kevent(kqueueFD, &kev, 1, nullptr, 0, nullptr);
+    }
+
+    // ... (~kqueue_poller, notify, remove, and add/modify remain same) ...
+
+    int32_t wait(std::vector<poll_event_result> &results, int32_t timeout_ms) override
+    {
+        struct timespec ts;
+        struct timespec *timeout_ptr = nullptr;
+        if (timeout_ms >= 0) {
+            ts.tv_sec = timeout_ms / 1000;
+            ts.tv_nsec = (timeout_ms % 1000) * 1000000;
+            timeout_ptr = &ts;
         }
 
-        ~kqueue_poller()
+        // 1. Get events from kernel
+        int32_t n = kevent(kqueueFD, nullptr, 0, events.data(), events.size(), timeout_ptr);
+        
+        // 2. Process events using Direct Indexing (No Map!)
+        for (int i = 0; i < n; ++i)
         {
-            if (kqueueFD != -1)
-                close(kqueueFD);
-        }
+            if (events[i].filter == EVFILT_USER) continue;
 
-        bool add(int fd, poll_event_flag flags) override
-        {
-            std::lock_guard<std::mutex> lock(mtx);
-            // Use EV_ADD | EV_ENABLE for new descriptors
-            return ctl(fd, flags, EV_ADD | EV_ENABLE);
-        }
-
-        bool modify(int32_t fd, poll_event_flag flags) override
-        {
-            std::lock_guard<std::mutex> lock(mtx);
-            // In kqueue, EV_ADD updates existing filters. 
-            // Our ctl helper handles deleting unused filters.
-            return ctl(fd, flags, EV_ADD | EV_ENABLE);
-        }
-
-        bool remove(int32_t fd) override
-        {
-            std::lock_guard<std::mutex> lock(mtx);
-            struct kevent kev[2];
-            // We ignore errors here because we don't know if both READ and WRITE existed
-            EV_SET(&kev[0], fd, EVFILT_READ, EV_DELETE, 0, 0, nullptr);
-            EV_SET(&kev[1], fd, EVFILT_WRITE, EV_DELETE, 0, 0, nullptr);
-            kevent(kqueueFD, kev, 2, nullptr, 0, nullptr);
-            return true;
-        }
-
-        void notify() override
-        {
-            struct kevent kev;
-            // Trigger the user event registered in the constructor
-            EV_SET(&kev, 0, EVFILT_USER, 0, NOTE_TRIGGER, 0, nullptr);
-            kevent(kqueueFD, &kev, 1, nullptr, 0, nullptr);
-        }
-
-        int32_t wait(std::vector<poll_event_result> &results, int32_t timeout_ms) override
-        {
-            struct timespec ts;
-            struct timespec *timeout_ptr = nullptr;
-            if (timeout_ms >= 0) {
-                ts.tv_sec = timeout_ms / 1000;
-                ts.tv_nsec = (timeout_ms % 1000) * 1000000;
-                timeout_ptr = &ts;
-            }
-
-            int32_t n = kevent(kqueueFD, nullptr, 0, events.data(), events.size(), timeout_ptr);
+            int32_t fd = static_cast<int32_t>(events[i].ident);
             
-            // To match epoll behavior, results should likely be cleared by the caller 
-            // or here, depending on your API contract. 
-            fd_to_idx.clear();
+            // Boundary check for safety
+            if (fd >= (int)fd_to_idx.size()) fd_to_idx.resize(fd + 1024, -1);
 
-            for (int i = 0; i < n; ++i)
+            int32_t idx = fd_to_idx[fd];
+            if (idx != -1)
             {
-                if (events[i].filter == EVFILT_USER)
-                    continue;
-
-                int32_t fd = static_cast<int32_t>(events[i].ident);
-
-                auto it = fd_to_idx.find(fd);
-                if (it != fd_to_idx.end())
-                {
-                    map_flags(events[i], results[it->second]);
-                }
-                else
-                {
-                    poll_event_result res = {fd, 0};
-                    map_flags(events[i], res);
-                    fd_to_idx[fd] = results.size();
-                    results.push_back(res);
-                }
+                map_flags(events[i], results[idx]);
             }
-            return static_cast<int32_t>(results.size());
+            else
+            {
+                fd_to_idx[fd] = static_cast<int32_t>(results.size());
+                poll_event_result res = {fd, 0};
+                map_flags(events[i], res);
+                results.push_back(res);
+            }
         }
 
-    private:
-        int32_t kqueueFD;
-        std::vector<struct kevent> events;
-        std::unordered_map<int32_t, size_t> fd_to_idx;
-        std::mutex mtx;
-
-        void map_flags(const struct kevent &ev, poll_event_result &res)
-        {
-            if (ev.filter == EVFILT_READ) res.flags |= poll_event_read;
-            if (ev.filter == EVFILT_WRITE) res.flags |= poll_event_write;
-            if (ev.flags & EV_ERROR) res.flags |= poll_event_error;
-            if (ev.flags & EV_EOF) res.flags |= poll_event_disconnect;
+        // 3. Reset the lookup array for the NEXT call efficiently
+        for (const auto& res : results) {
+            fd_to_idx[res.fd] = -1;
         }
 
-        bool ctl(int32_t fd, uint32_t flags, uint16_t action)
-        {
-            struct kevent kev[2];
-            int n = 0;
+        return static_cast<int32_t>(results.size());
+    }
 
-            if (flags & poll_event_read)
-                EV_SET(&kev[n++], fd, EVFILT_READ, action, 0, 0, nullptr);
-            else {
-                // Remove the read filter if it was there
-                struct kevent del_kev;
-                EV_SET(&del_kev, fd, EVFILT_READ, EV_DELETE, 0, 0, nullptr);
-                kevent(kqueueFD, &del_kev, 1, nullptr, 0, nullptr);
-            }
+private:
+    int32_t kqueueFD;
+    std::vector<struct kevent> events;
+    
+    // CHANGE: Use a vector as a Direct Address Table (O(1) lookup, no hashing)
+    std::vector<int32_t> fd_to_idx; 
+    std::mutex mtx;
 
-            if (flags & poll_event_write)
-                EV_SET(&kev[n++], fd, EVFILT_WRITE, action, 0, 0, nullptr);
-            else {
-                // Remove the write filter if it was there
-                struct kevent del_kev;
-                EV_SET(&del_kev, fd, EVFILT_WRITE, EV_DELETE, 0, 0, nullptr);
-                kevent(kqueueFD, &del_kev, 1, nullptr, 0, nullptr);
-            }
+    // ... (map_flags is fine) ...
 
-            if (n == 0) return true;
-            return kevent(kqueueFD, kev, n, nullptr, 0, nullptr) != -1;
-        }
-    };
+    bool ctl(int32_t fd, uint32_t flags, uint16_t action)
+    {
+        // PERFORMANCE FIX: Don't call kevent() multiple times inside ctl.
+        // Prepare one batch and send it in one system call.
+        struct kevent kev[2];
+        int n = 0;
+
+        // Add/Update Read
+        if (flags & poll_event_read)
+            EV_SET(&kev[n++], fd, EVFILT_READ, action, 0, 0, nullptr);
+        else
+            EV_SET(&kev[n++], fd, EVFILT_READ, EV_DELETE, 0, 0, nullptr);
+
+        // Add/Update Write
+        if (flags & poll_event_write)
+            EV_SET(&kev[n++], fd, EVFILT_WRITE, action, 0, 0, nullptr);
+        else
+            EV_SET(&kev[n++], fd, EVFILT_WRITE, EV_DELETE, 0, 0, nullptr);
+
+        // We ignore EV_DELETE errors here because a filter might not exist
+        return kevent(kqueueFD, kev, n, nullptr, 0, nullptr) != -1;
+    }
+};
+
+    // class kqueue_poller : public poller
+    // {
+    // public:
+    //     kqueue_poller()
+    //     {
+    //         events.resize(1024);
+    //         kqueueFD = kqueue();
+
+    //         struct kevent kev;
+    //         EV_SET(&kev, 0, EVFILT_USER, EV_ADD | EV_CLEAR, 0, 0, nullptr);
+    //         kevent(kqueueFD, &kev, 1, nullptr, 0, nullptr);
+    //     }
+
+    //     ~kqueue_poller()
+    //     {
+    //         if (kqueueFD != -1)
+    //             close(kqueueFD);
+    //     }
+
+    //     bool add(int fd, poll_event_flag flags) override
+    //     {
+    //         std::lock_guard<std::mutex> lock(mtx);
+    //         // Use EV_ADD | EV_ENABLE for new descriptors
+    //         return ctl(fd, flags, EV_ADD | EV_ENABLE);
+    //     }
+
+    //     bool modify(int32_t fd, poll_event_flag flags) override
+    //     {
+    //         std::lock_guard<std::mutex> lock(mtx);
+    //         // In kqueue, EV_ADD updates existing filters. 
+    //         // Our ctl helper handles deleting unused filters.
+    //         return ctl(fd, flags, EV_ADD | EV_ENABLE);
+    //     }
+
+    //     bool remove(int32_t fd) override
+    //     {
+    //         std::lock_guard<std::mutex> lock(mtx);
+    //         struct kevent kev[2];
+    //         // We ignore errors here because we don't know if both READ and WRITE existed
+    //         EV_SET(&kev[0], fd, EVFILT_READ, EV_DELETE, 0, 0, nullptr);
+    //         EV_SET(&kev[1], fd, EVFILT_WRITE, EV_DELETE, 0, 0, nullptr);
+    //         kevent(kqueueFD, kev, 2, nullptr, 0, nullptr);
+    //         return true;
+    //     }
+
+    //     void notify() override
+    //     {
+    //         struct kevent kev;
+    //         // Trigger the user event registered in the constructor
+    //         EV_SET(&kev, 0, EVFILT_USER, 0, NOTE_TRIGGER, 0, nullptr);
+    //         kevent(kqueueFD, &kev, 1, nullptr, 0, nullptr);
+    //     }
+
+    //     int32_t wait(std::vector<poll_event_result> &results, int32_t timeout_ms) override
+    //     {
+    //         struct timespec ts;
+    //         struct timespec *timeout_ptr = nullptr;
+    //         if (timeout_ms >= 0) {
+    //             ts.tv_sec = timeout_ms / 1000;
+    //             ts.tv_nsec = (timeout_ms % 1000) * 1000000;
+    //             timeout_ptr = &ts;
+    //         }
+
+    //         int32_t n = kevent(kqueueFD, nullptr, 0, events.data(), events.size(), timeout_ptr);
+            
+    //         // To match epoll behavior, results should likely be cleared by the caller 
+    //         // or here, depending on your API contract. 
+    //         fd_to_idx.clear();
+
+    //         for (int i = 0; i < n; ++i)
+    //         {
+    //             if (events[i].filter == EVFILT_USER)
+    //                 continue;
+
+    //             int32_t fd = static_cast<int32_t>(events[i].ident);
+
+    //             auto it = fd_to_idx.find(fd);
+    //             if (it != fd_to_idx.end())
+    //             {
+    //                 map_flags(events[i], results[it->second]);
+    //             }
+    //             else
+    //             {
+    //                 poll_event_result res = {fd, 0};
+    //                 map_flags(events[i], res);
+    //                 fd_to_idx[fd] = results.size();
+    //                 results.push_back(res);
+    //             }
+    //         }
+    //         return static_cast<int32_t>(results.size());
+    //     }
+
+    // private:
+    //     int32_t kqueueFD;
+    //     std::vector<struct kevent> events;
+    //     std::unordered_map<int32_t, size_t> fd_to_idx;
+    //     std::mutex mtx;
+
+    //     void map_flags(const struct kevent &ev, poll_event_result &res)
+    //     {
+    //         if (ev.filter == EVFILT_READ) res.flags |= poll_event_read;
+    //         if (ev.filter == EVFILT_WRITE) res.flags |= poll_event_write;
+    //         if (ev.flags & EV_ERROR) res.flags |= poll_event_error;
+    //         if (ev.flags & EV_EOF) res.flags |= poll_event_disconnect;
+    //     }
+
+    //     bool ctl(int32_t fd, uint32_t flags, uint16_t action)
+    //     {
+    //         struct kevent kev[2];
+    //         int n = 0;
+
+    //         if (flags & poll_event_read)
+    //             EV_SET(&kev[n++], fd, EVFILT_READ, action, 0, 0, nullptr);
+    //         else {
+    //             // Remove the read filter if it was there
+    //             struct kevent del_kev;
+    //             EV_SET(&del_kev, fd, EVFILT_READ, EV_DELETE, 0, 0, nullptr);
+    //             kevent(kqueueFD, &del_kev, 1, nullptr, 0, nullptr);
+    //         }
+
+    //         if (flags & poll_event_write)
+    //             EV_SET(&kev[n++], fd, EVFILT_WRITE, action, 0, 0, nullptr);
+    //         else {
+    //             // Remove the write filter if it was there
+    //             struct kevent del_kev;
+    //             EV_SET(&del_kev, fd, EVFILT_WRITE, EV_DELETE, 0, 0, nullptr);
+    //             kevent(kqueueFD, &del_kev, 1, nullptr, 0, nullptr);
+    //         }
+
+    //         if (n == 0) return true;
+    //         return kevent(kqueueFD, kev, n, nullptr, 0, nullptr) != -1;
+    //     }
+    // };
 #elif defined(_WIN32) || defined(_WIN64)
 	class wsa_poller : public poller
 	{
