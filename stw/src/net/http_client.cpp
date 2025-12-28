@@ -192,7 +192,7 @@ namespace stw
 			if(fn)
 				return true;
 			
-			std::cerr << "Failed to loaded function: " << name << '\n';
+			std::cout << "Failed to loaded function: " << name << '\n';
 
 			if(libraryHandle)
 				stw::runtime::unload_library(libraryHandle);
@@ -385,7 +385,7 @@ namespace stw
 
     static void write_error(const std::string &message) 
 	{
-		std::cerr << message << '\n';
+		std::cout << message << '\n';
     }
 
 	http_client::http_client()

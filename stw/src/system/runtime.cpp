@@ -54,15 +54,10 @@ namespace stw::runtime
 			std::cout << "Failed to load plugin: " << filePath << '\n';
 #elif defined(STW_PLATFORM_LINUX) || defined(STW_PLATFORM_MAC) || defined(STW_PLATFORM_BSD)
 		moduleHandle = dlopen(filePath.c_str(), RTLD_LAZY);
-		std::cout << "Trying to load " << filePath << '\n';
 		if (!moduleHandle)
 		{
 			char *error = dlerror();
 			std::cout << "Failed to load plugin: " << filePath << ". Error: " << error << '\n';
-		}
-		else
-		{
-			std::cout << "Module " << filePath << " " << (uint64_t)moduleHandle << '\n';
 		}
 #endif
 
