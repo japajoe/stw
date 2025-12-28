@@ -22,6 +22,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <ranges>
 
 namespace fs = std::filesystem;
 
@@ -135,16 +136,22 @@ namespace stw::file
         if(!exists(filePath))
             return false;
 
-        fs::path directoryPath_ = fs::absolute(directoryPath);
-        fs::path filePath_ = fs::absolute(filePath);
+		try 
+		{
+			// Canonical resolves symlinks and ".." which is safer for security checks
+			fs::path normRoot = fs::canonical(directoryPath);
+			fs::path normChild = fs::canonical(filePath);
 
-        auto const normRoot = fs::canonical(directoryPath_);
-        auto const normChild = fs::canonical(filePath_);
-        
-        auto itr = std::search(normChild.begin(), normChild.end(), 
-                            normRoot.begin(), normRoot.end());
-        
-        return itr == normChild.begin();
+			// std::ranges::search handles path iterators correctly on FreeBSD
+			auto search_result = std::ranges::search(normChild, normRoot);
+			
+			// Check if the root path was found at the very beginning of the file path
+			return search_result.begin() == normChild.begin();
+		} 
+		catch (const fs::filesystem_error&) 
+		{
+			return false;
+		}
     }
 
     std::string get_name(const std::string &filePath, bool withExtension)
