@@ -125,6 +125,8 @@ namespace stw
 		std::string contentType;
 	};
 
+	// TODO: use other data structure for request and response headers
+	// Options are multimap or vector<header> etc.
 	struct http_request
 	{
 		http_method method;
