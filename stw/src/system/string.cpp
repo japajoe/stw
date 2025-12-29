@@ -19,9 +19,76 @@
 #include "string.hpp"
 #include <sstream>
 #include <algorithm>
+#include <unordered_map>
+#include <iostream>
+#include <charconv>
+#include <array>
 
 namespace stw::string
 {
+	struct html_entity_entry 
+	{
+		std::string_view name;
+		std::string_view value;
+
+		bool operator<(std::string_view search_name) const 
+		{
+			return name < search_name;
+		}
+	};
+
+	// A sorted list of HTML entities. 
+	// IMPORTANT: This list MUST be kept in alphabetical order for binary search to work.
+	// See method 'create_html_entity_array' to generate a sorted array
+	static constexpr std::array<html_entity_entry, 182> kEntityTable = {{
+		{"Acirc", "Â"}, {"Agrave", "À"}, {"Alpha", "Α"}, {"Atilde", "Ã"}, 
+		{"Auml", "Ä"}, {"Beta", "Β"}, {"Ccedil", "Ç"}, {"Chi", "Χ"}, 
+		{"Dagger", "‡"}, {"Delta", "Δ"}, {"Eacute", "É"}, {"Ecirc", "Ê"}, 
+		{"Epsilon", "Ε"}, {"Eta", "Η"}, {"Evert", "È"}, {"Gamma", "Γ"}, 
+		{"Icirc", "Î"}, {"Igrave", "Ì"}, {"Iota", "Ι"}, {"Kappa", "Κ"}, 
+		{"Lambda", "Λ"}, {"Mu", "Μ"}, {"Ntilde", "Ñ"}, {"Nu", "Ν"}, 
+		{"Ocirc", "Ô"}, {"Ograve", "Ò"}, {"Omega", "Ω"}, {"Omicron", "Ο"}, 
+		{"Otilde", "Õ"}, {"Ouml", "Ö"}, {"Phi", "Φ"}, {"Pi", "Π"}, 
+		{"Prime", "″"}, {"Psi", "Ψ"}, {"Rho", "Ρ"}, {"Sigma", "Σ"}, 
+		{"Tau", "Τ"}, {"Theta", "Θ"}, {"Ucirc", "Û"}, {"Ugrave", "Ù"}, 
+		{"Upsilon", "Υ"}, {"Uuml", "Ü"}, {"Xi", "Ξ"}, {"Zeta", "Ζ"}, 
+		{"acirc", "â"}, {"agrave", "à"}, {"alefsym", "ℵ"}, {"alpha", "α"}, 
+		{"amp", "&"}, {"and", "∧"}, {"ang", "∠"}, {"apos", "'"}, 
+		{"asymp", "≈"}, {"atilde", "ã"}, {"auml", "ä"}, {"bdquo", "„"}, 
+		{"beta", "β"}, {"bull", "•"}, {"cap", "∩"}, {"ccedil", "ç"}, 
+		{"cent", "¢"}, {"chi", "χ"}, {"clubs", "♣"}, {"cong", "≅"}, 
+		{"copy", "©"}, {"crarr", "↵"}, {"cup", "∪"}, {"dArr", "⇓"}, 
+		{"dagger", "†"}, {"darr", "↓"}, {"deg", "°"}, {"delta", "δ"}, 
+		{"diams", "♦"}, {"eacute", "é"}, {"ecirc", "ê"}, {"empty", "∅"}, 
+		{"epsilon", "ε"}, {"equiv", "≡"}, {"eta", "η"}, {"euro", "€"}, 
+		{"evert", "è"}, {"exists", "∃"}, {"forall", "∀"}, {"gamma", "γ"}, 
+		{"ge", "≥"}, {"gt", ">"}, {"hArr", "⇔"}, {"harr", "↔"}, 
+		{"hearts", "♥"}, {"hellip", "…"}, {"icirc", "î"}, {"igrave", "ì"}, 
+		{"image", "ℑ"}, {"infin", "∞"}, {"int", "∫"}, {"iota", "ι"}, 
+		{"isin", "∈"}, {"kappa", "κ"}, {"lArr", "⇐"}, {"lambda", "λ"}, 
+		{"larr", "←"}, {"lceil", "⌈"}, {"ldquo", "“"}, {"le", "≤"}, 
+		{"lfloor", "⌊"}, {"lowast", "∗"}, {"loz", "◊"}, {"lsaquo", "‹"}, 
+		{"lsquo", "‘"}, {"lt", "<"}, {"mdash", "—"}, {"middot", "·"}, 
+		{"minus", "−"}, {"mu", "μ"}, {"nabla", "∇"}, {"nbsp", ""}, 
+		{"ndash", "–"}, {"ne", "≠"}, {"ni", "∋"}, {"notin", "∉"}, 
+		{"nsub", "⊄"}, {"ntilde", "ñ"}, {"nu", "ν"}, {"ocirc", "ô"}, 
+		{"ograve", "ò"}, {"omega", "ω"}, {"omicron", "ο"}, {"oplus", "⊕"}, 
+		{"or", "∨"}, {"otilde", "õ"}, {"otimes", "⊗"}, {"ouml", "ö"}, 
+		{"para", "¶"}, {"part", "∂"}, {"permil", "‰"}, {"perp", "⊥"}, 
+		{"phi", "φ"}, {"pi", "π"}, {"plusmn", "±"}, {"pound", "£"}, 
+		{"prime", "′"}, {"prod", "∏"}, {"prop", "∝"}, {"psi", "ψ"}, 
+		{"quot", "\""}, {"rArr", "⇒"}, {"radic", "√"}, {"rarr", "→"}, 
+		{"rceil", "⌉"}, {"rdquo", "”"}, {"real", "ℜ"}, {"reg", "®"}, 
+		{"rfloor", "⌋"}, {"rho", "ρ"}, {"rsaquo", "›"}, {"rsquo", "’"}, 
+		{"sbquo", "‚"}, {"sdot", "⋅"}, {"sect", "§"}, {"sigma", "ς"}, 
+		{"sim", "∼"}, {"spades", "♠"}, {"sub", "⊂"}, {"sube", "⊆"}, 
+		{"sum", "∑"}, {"sup", "⊃"}, {"supe", "⊇"}, {"szlig", "ß"}, 
+		{"tau", "τ"}, {"there4", "∴"}, {"theta", "θ"}, {"trade", "™"}, 
+		{"uArr", "⇑"}, {"uarr", "↑"}, {"ucirc", "û"}, {"ugrave", "ù"}, 
+		{"upsilon", "υ"}, {"uuml", "ü"}, {"weierp", "℘"}, {"xi", "ξ"}, 
+		{"yen", "¥"}, {"zeta", "ζ"}
+	}};
+
     bool is_valid_utf8(const void *data, size_t size) 
 	{
         int numBytes = 0; // Number of bytes expected in the current UTF-8 character
@@ -122,6 +189,69 @@ namespace stw::string
 			}
 		}
 		return ret;
+	}
+
+	std::string html_decode(const std::string &s) 
+	{
+
+		std::string_view str = s;
+
+		std::string result;
+		result.reserve(str.size());
+
+		for (size_t i = 0; i < str.size(); ++i) {
+			if (str[i] == '&') {
+				size_t end = str.find(';', i);
+				if (end != std::string_view::npos && end - i > 2) {
+					std::string_view entity = str.substr(i + 1, end - i - 1);
+
+					// 1. Handle Numeric Entities
+					if (entity[0] == '#') {
+						uint32_t code = 0;
+						bool success = false;
+						if (entity.size() > 2 && (entity[1] == 'x' || entity[1] == 'X')) {
+							auto sub = entity.substr(2);
+							auto [ptr, ec] = std::from_chars(sub.data(), sub.data() + sub.size(), code, 16);
+							success = (ec == std::errc{});
+						} else {
+							auto sub = entity.substr(1);
+							auto [ptr, ec] = std::from_chars(sub.data(), sub.data() + sub.size(), code);
+							success = (ec == std::errc{});
+						}
+
+						if (success) {
+							// UTF-8 multi-byte encoding
+							if (code <= 0x7F) {
+								result += static_cast<char>(code);
+							} else if (code <= 0x7FF) {
+								result += static_cast<char>(0xC0 | (code >> 6));
+								result += static_cast<char>(0x80 | (code & 0x3F));
+							} else if (code <= 0xFFFF) {
+								result += static_cast<char>(0xE0 | (code >> 12));
+								result += static_cast<char>(0x80 | ((code >> 6) & 0x3F));
+								result += static_cast<char>(0x80 | (code & 0x3F));
+							} else if (code <= 0x10FFFF) {
+								result += static_cast<char>(0xF0 | (code >> 18));
+								result += static_cast<char>(0x80 | ((code >> 12) & 0x3F));
+								result += static_cast<char>(0x80 | ((code >> 6) & 0x3F));
+								result += static_cast<char>(0x80 | (code & 0x3F));
+							}
+							i = end; continue;
+						}
+					} 
+					// 2. Handle Named Entities via Binary Search
+					else {
+						auto it = std::lower_bound(kEntityTable.begin(), kEntityTable.end(), entity);
+						if (it != kEntityTable.end() && it->name == entity) {
+							result += it->value;
+							i = end; continue;
+						}
+					}
+				}
+			}
+			result += str[i];
+		}
+		return result;
 	}
 
 	bool compare(const std::string &str1, const std::string &str2, bool ignoreCase)
@@ -380,5 +510,66 @@ namespace stw::string
             return false;
         
         return true;
-	}	
+	}
+
+	std::string create_html_entity_array(std::string &data) 
+	{
+		// Raw input (can be expanded with more HTML5 entities)
+		// std::string data = "quot=\" amp=& apos=' lt=< gt=> nbsp=  copy=© reg=® trade=™ euro=€ "
+		// 				"cent=¢ pound=£ yen=¥ sect=§ deg=° plusmn=± para=¶ middot=· "
+		// 				"ndash=– mdash=— lsquo=‘ rsquo=’ sbquo=‚ ldquo=“ rdquo=” bdquo=„ "
+		// 				"dagger=† Dagger=‡ bull=• hellip=… permil=‰ prime=′ Prime=″ "
+		// 				"lsaquo=‹ rsaquo=› ouml=ö auml=ä uuml=ü Ouml=Ö Auml=Ä Uuml=Ü "
+		// 				"szlig=ß ccedil=ç Ccedil=Ç eacute=é Eacute=É agrave=à Agrave=À";
+
+		std::vector<html_entity_entry> entities;
+		std::stringstream ss(data);
+		std::string pair;
+
+		while (ss >> pair) {
+			size_t pos = pair.find('=');
+			if (pos != std::string::npos) {
+				entities.push_back({pair.substr(0, pos), pair.substr(pos + 1)});
+			}
+		}
+
+		// Sort alphabetically for binary search
+		std::sort(entities.begin(), entities.end(), [](const html_entity_entry& a, const html_entity_entry& b) {
+			return a.name < b.name;
+		});
+
+		// Remove potential duplicates
+		entities.erase(std::unique(entities.begin(), entities.end(), [](const html_entity_entry& a, const html_entity_entry& b){
+			return a.name == b.name;
+		}), entities.end());
+
+		auto escape_value = [](std::string_view v) -> std::string {
+			if (v == "\"") return "\\\"";
+			if (v == "\\") return "\\\\";
+			return std::string(v);
+		};
+
+		std::stringstream output;
+		size_t entriesPerLine = 4;
+
+		// Code generation
+		output << "static constexpr std::array<html_entity_entry, " << entities.size() << "> kEntityTable = {{\n";
+		for (size_t i = 0; i < entities.size(); ++i) {
+			if (i % entriesPerLine == 0) 
+				output << "    ";
+			
+			output << "{\"" << entities[i].name << "\", \"" << escape_value(entities[i].value) << "\"}";
+			
+			if (i != entities.size() - 1) 
+			{
+				output << ", ";
+				if ((i + 1) % entriesPerLine == 0) 
+					output << "\n";
+			}
+		}
+
+		output << "\n}};\n";
+
+		return output.str();
+	}
 }

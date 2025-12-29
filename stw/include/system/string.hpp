@@ -27,6 +27,7 @@ namespace stw::string
 {
 	bool is_valid_utf8(const void *data, size_t size);
 	std::string url_decode(const std::string &str);
+	std::string html_decode(const std::string &s);
 	bool compare(const std::string &str1, const std::string &str2, bool ignoreCase);
 	bool contains(const std::string &haystack, const std::string &needle);
 	bool starts_with(const std::string &haystack, const std::string &needle);
@@ -51,6 +52,7 @@ namespace stw::string
 	bool try_parse_int64(const std::string &value, int64_t &v);
 	bool try_parse_float(const std::string &value, float &v);
 	bool try_parse_double(const std::string &value, double &v);
+	std::string create_html_entity_array(std::string &data);
 }
 
 #endif
