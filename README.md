@@ -142,7 +142,7 @@ If successful, the generated files will be in the output directory. The class na
 class index_controller : public stw::http_controller
 {
 public:
-	stw::http_response on_get(const stw::http_request &request, stw::http_stream *stream) override
+	stw::http_response on_get(stw::http_request &request, stw::http_stream *stream) override
 	{
 		auto responseInfo = view.get(&request);
 		stw::http_response response;
@@ -168,7 +168,7 @@ int main()
 
 	router.add<index_controller>("/");
 
-	server.onRequest = [&] (const stw::http_request &request, stw::http_stream *stream) -> stw::http_response {
+	server.onRequest = [&] (stw::http_request &request, stw::http_stream *stream) -> stw::http_response {
 		// In principle, you just need to set the fields on the http_response object and return it
 		// - The status code is mandatory
 		// - Content can either be nullptr, std::shared_ptr<stw::memory_stream> or std::shared_ptr<stw::file_stream>

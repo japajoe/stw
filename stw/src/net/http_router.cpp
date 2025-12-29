@@ -46,7 +46,7 @@ namespace stw
 		return nullptr;
 	}
 
-	bool http_router::process_request(const http_request &request, http_stream *stream, http_response &response)
+	bool http_router::process_request(http_request &request, http_stream *stream, http_response &response)
 	{
 		auto r = get(request.path);
 

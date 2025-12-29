@@ -71,7 +71,7 @@ namespace stw
         std::atomic<bool> stopFlag;
     };
 
-    using request_handler = std::function<http_response(const http_request &request, http_stream *stream)>;
+    using request_handler = std::function<http_response(http_request &request, http_stream *stream)>;
 
     class http_server
     {

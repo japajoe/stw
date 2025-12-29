@@ -30,12 +30,12 @@
 
 namespace stw
 {
-	using http_request_handler = std::function<http_response(const http_request &request, http_stream *stream)>;
+	using http_request_handler = std::function<http_response(http_request &request, http_stream *stream)>;
 
 	class http_router
 	{
 	public:
-		bool process_request(const http_request &request, http_stream *stream, http_response &response);
+		bool process_request(http_request &request, http_stream *stream, http_response &response);
 		void add(http_method method, const std::string &route, http_request_handler handler);
 		void add(http_method method, const std::regex &route, http_request_handler handler);
 

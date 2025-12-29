@@ -84,4 +84,34 @@ namespace stw
 
 		return socket->read(buffer, size);
 	}
+
+	bool http_stream::read_as_string(std::string &str, uint64_t size)
+	{
+		if (size == 0) 
+			return false;
+
+		str.reserve(str.size() + size);
+
+        char buffer[4096];
+        uint64_t bytesRemaining = size;
+
+        while (bytesRemaining > 0)
+        {
+            size_t toRead = (bytesRemaining < sizeof(buffer)) ? bytesRemaining : sizeof(buffer);
+
+            int64_t bytesRead = this->read(buffer, toRead);
+
+            if (bytesRead <= 0)
+            {
+				if(STW_SOCKET_ERR == STW_EAGAIN || STW_SOCKET_ERR == STW_EWOULDBLOCK)
+					continue;
+				return false;
+            }
+
+            str.append(buffer, static_cast<size_t>(bytesRead));
+            bytesRemaining -= static_cast<uint64_t>(bytesRead);
+        }
+
+        return true;
+	}
 }

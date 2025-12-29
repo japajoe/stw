@@ -20,6 +20,7 @@
 #define STW_HTTP_STREAM_HPP
 
 #include "socket.hpp"
+#include <string>
 #include <cstdint>
 #include <cstdlib>
 #include <memory>
@@ -33,6 +34,7 @@ namespace stw
 		http_stream(std::shared_ptr<stw::socket> socket, void *initialContent, uint64_t initialContentLength);
 		~http_stream();
 		int64_t read(void *buffer, size_t size);
+		bool read_as_string(std::string &str, uint64_t size);
 	private:
 		std::shared_ptr<stw::socket> socket;
 		void *initialContent;

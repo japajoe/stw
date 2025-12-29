@@ -21,6 +21,7 @@
 #include <sstream>
 #include <filesystem>
 #include <algorithm>
+#include <iostream>
 
 namespace stw
 {
@@ -102,9 +103,6 @@ namespace stw
 
 				std::string value = line.substr(delimiterPos + 2); // Skip the ": "
 
-				// Insert into the headers map
-				request.headers[std::move(key)] = std::move(value);
-
 				if(key == "content-length")
 				{
 					try 
@@ -118,6 +116,9 @@ namespace stw
 						contentLengthSet = true;
 					}
 				}
+
+				// Insert into the headers map
+				request.headers[std::move(key)] = std::move(value);
 			}
 		}
 
