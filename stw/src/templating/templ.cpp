@@ -89,7 +89,7 @@ class ${CLASS_NAME}
 		std::string m_contentType_;
 	};
 
-	const http_request *m_requestInfo_;
+	http_request *m_requestInfo_;
 	http_response_info m_responseInfo_;
 	void *m_userData_;
 	std::stringstream m_ss_;
@@ -99,12 +99,12 @@ class ${CLASS_NAME}
 		m_requestInfo_ = nullptr;
 		m_userData_ = nullptr;
 	}
-	stw::http_response_info *get(const stw::http_request *requestInfo, void *userData = nullptr)
+	stw::http_response_info *get(stw::http_request *requestInfo, void *userData = nullptr)
 	{
 		if(!requestInfo)
 			throw std::runtime_error("${CLASS_NAME}::get requestInfo can not be null");
 
-		m_requestInfo_ = reinterpret_cast<const http_request*>(requestInfo);
+		m_requestInfo_ = reinterpret_cast<http_request*>(requestInfo);
 		m_userData_ = userData;
 		
 		${GENERATED_CODE}
@@ -124,6 +124,14 @@ class ${CLASS_NAME}
 	std::string get_ip() const
 	{
 		return this->m_requestInfo_->m_ip_;
+	}
+	std::unordered_map<std::string, std::string> &get_request_headers()
+	{
+		return m_requestInfo_->m_headers_;
+	}
+	std::unordered_map<std::string, std::string> &get_response_headers()
+	{
+		return m_responseInfo_.m_headers_;
 	}
 	void *get_user_data()
 	{
