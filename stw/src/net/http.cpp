@@ -25,6 +25,19 @@
 
 namespace stw
 {
+	static inline bool compare_case_insensitive(const std::string &str1, const std::string &str2) 
+	{
+		if (str1.length() != str2.length())
+			return false;
+
+		for (size_t i = 0; i < str1.length(); ++i) 
+		{
+			if (std::tolower(static_cast<unsigned char>(str1[i])) != std::tolower(static_cast<unsigned char>(str2[i])))
+				return false;
+		}
+		return true; // All characters matched
+	}
+
 	http_request::http_request()
 	{
 		contentLength = 0;
@@ -95,15 +108,11 @@ namespace stw
 			size_t delimiterPos = line.find(": ");
 			if (delimiterPos != std::string::npos) 
 			{
-				// Convert key to lower case because some clients may be messy
 				std::string key = line.substr(0, delimiterPos);
-
-				for(auto &c : key) 
-					c = std::tolower(c);
-
 				std::string value = line.substr(delimiterPos + 2); // Skip the ": "
+				bool isCookie = false;
 
-				if(key == "content-length")
+				if(compare_case_insensitive(key, "Content-Length"))
 				{
 					try 
 					{
@@ -116,9 +125,37 @@ namespace stw
 						contentLengthSet = true;
 					}
 				}
+				else if(compare_case_insensitive(key, "Cookie"))
+				{
+					isCookie = true;
+
+					std::istringstream cookieStream(value);
+					std::string cookiePair;
+
+					// Split by semicolon
+					while (std::getline(cookieStream, cookiePair, ';')) 
+					{
+						// Remove leading whitespace (common in Cookie headers)
+						size_t first = cookiePair.find_first_not_of(" ");
+						if (std::string::npos != first) 
+						{
+							cookiePair = cookiePair.substr(first);
+						}
+
+						// Split by '=' to get name and value
+						size_t sep = cookiePair.find('=');
+						if (sep != std::string::npos) 
+						{
+							std::string cName = cookiePair.substr(0, sep);
+							std::string cValue = cookiePair.substr(sep + 1);
+							request.cookies[std::move(cName)] = std::move(cValue);
+						}
+					}
+				}
 
 				// Insert into the headers map
-				request.headers[std::move(key)] = std::move(value);
+				if(!isCookie)
+					request.headers[std::move(key)] = std::move(value);
 			}
 		}
 
@@ -127,20 +164,6 @@ namespace stw
 			request.contentLength = 0;
 
 		return true;
-	}
-
-
-	static inline bool compare_case_insensitive(const std::string &str1, const std::string &str2) 
-	{
-		if (str1.length() != str2.length())
-			return false;
-
-		for (size_t i = 0; i < str1.length(); ++i) 
-		{
-			if (std::tolower(static_cast<unsigned char>(str1[i])) != std::tolower(static_cast<unsigned char>(str2[i])))
-				return false;
-		}
-		return true; // All characters matched
 	}
 
 	http_method http_request::get_http_method_from_string(const std::string &method)

@@ -346,7 +346,6 @@ namespace stw
 
 		responseStream << "HTTP/1.1 " << context->response.statusCode << "\r\n";
 
-		// We do not convert the response header keys to lower case
 		if(context->response.content)
 			responseStream << "Content-Length: " << context->response.content->get_length() << "\r\n";
 		else
@@ -355,7 +354,6 @@ namespace stw
 		bool keepAlive = true;
 		bool mustClose = false;
 
-		// Request header keys are converted to lower case because some clients don't follow standard
 		if(context->request.headers.contains("connection"))
 		{
 			if(stw::string::compare(context->request.headers["connection"], "close", true))
@@ -396,6 +394,9 @@ namespace stw
 		{
 			for(const auto& [key,value] : context->response.headers)
 			{
+				// Only write Set-Cookie headers by iterating the cookies vector
+				if(stw::string::compare(key, "Set-Cookie", true))
+					continue;
 				responseStream << key + ": " << value << "\r\n";
 			}
 		}
@@ -409,6 +410,14 @@ namespace stw
 			else
 			{
 				responseStream << "Connection: close\r\n";
+			}
+		}
+
+		if(context->response.cookies.size() > 0)
+		{
+			for(const auto &[key,value] : context->response.cookies)
+			{
+				responseStream << "Set-Cookie: " << value << "\r\n";
 			}
 		}
 

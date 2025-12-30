@@ -44,6 +44,7 @@ ${INCLUDE_GUARD_START_2}
 #include <sstream>
 #include <string>
 #include <unordered_map>
+#include <vector>
 ${INCLUDES}
 
 namespace stw
@@ -78,10 +79,12 @@ class ${CLASS_NAME}
 		std::string m_ip_;
 		uint64_t m_contentLength_;
 		std::unordered_map<std::string, std::string> m_headers_;
+		std::unordered_map<std::string, std::string> m_cookies_;
 	};
 
 	struct http_response_info {
 		std::unordered_map<std::string, std::string> m_headers_;
+		std::unordered_map<std::string, std::string> m_cookies_;
 		std::string m_output_;
 		std::string m_contentType_;
 	};
@@ -121,18 +124,6 @@ class ${CLASS_NAME}
 	std::string get_ip() const
 	{
 		return this->m_requestInfo_->m_ip_;
-	}
-	std::unordered_map<std::string, std::string> get_request_headers() const
-	{
-		return this->m_requestInfo_->m_headers_;
-	}
-	std::unordered_map<std::string, std::string> &get_response_headers()
-	{
-		return this->m_responseInfo_.m_headers_;
-	}
-	void set_response_header(const std::string &key, const std::string& value)
-	{
-		this->m_responseInfo_.m_headers_[key] = value;
 	}
 	void *get_user_data()
 	{

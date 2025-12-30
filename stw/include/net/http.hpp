@@ -22,12 +22,14 @@
 #include <string>
 #include <cstdint>
 #include <unordered_map>
+#include <vector>
 #include <memory>
 #include "../system/stream.hpp"
 
 namespace stw
 {
-	using http_headers = std::unordered_map<std::string,std::string>;
+	using http_headers = std::unordered_map<std::string, std::string>;
+	using http_cookies = std::unordered_map<std::string, std::string>;
 
     enum http_header_error 
     {
@@ -121,6 +123,7 @@ namespace stw
 	struct http_response_info
 	{
 		http_headers headers;
+		http_cookies cookies;
 		std::string content;
 		std::string contentType;
 	};
@@ -135,6 +138,7 @@ namespace stw
 		std::string ip;
 		uint64_t contentLength;
 		http_headers headers;
+		http_cookies cookies;
 		http_request();
 		static bool parse(const std::string &requestBody, http_request &request);
 		static http_method get_http_method_from_string(const std::string &method);
@@ -145,6 +149,7 @@ namespace stw
 	{
 		uint32_t statusCode;
 		http_headers headers;
+		http_cookies cookies;
 		std::shared_ptr<stw::stream> content;
 		http_response();
 	};
