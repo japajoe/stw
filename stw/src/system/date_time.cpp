@@ -114,6 +114,11 @@ namespace stw
 		return date_time(std::chrono::system_clock::now());
 	}
 
+	int64_t date_time::get_epoch()
+	{
+		return 0;
+	}
+
 	int32_t date_time::get_second() const
 	{
         time_t tt = std::chrono::system_clock::to_time_t(timestamp);

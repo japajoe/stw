@@ -44,6 +44,14 @@ namespace stw
 		method = http_method_unknown;
 	}
 
+	bool http_request::get_cookie(const std::string &name, std::string &value)
+	{
+		if(!cookies.contains(name))
+			return false;
+		value = cookies[name];
+		return true;
+	}
+
 	bool http_request::parse(const std::string &requestBody, http_request &request)
 	{
 		if(request.headers.size() > 0)
@@ -221,6 +229,31 @@ namespace stw
 	{
 		statusCode = 0;
 		content = nullptr;
+	}
+
+	void http_response::set_cookie(const std::string &name, const std::string& value, const http_cookie_options *options)
+	{
+		if(options)
+		{
+			std::string attributes = value;
+
+			if (options->maxAge >= 0) 
+				attributes += "; Max-Age=" + std::to_string(options->maxAge);
+			if (!options->path.empty()) 
+				attributes += "; Path=" + options->path;
+			if (!options->sameSite.empty()) 
+				attributes += "; SameSite=" + options->sameSite;
+			if (options->httpOnly) 
+				attributes += "; HttpOnly";
+			if (options->secure) 
+				attributes += "; Secure";
+			
+			cookies[name] = attributes;
+		}
+		else
+		{
+			cookies[name] = value;
+		}
 	}
 
     static std::unordered_map<std::string, std::string> mimeTypes = {

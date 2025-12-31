@@ -31,6 +31,15 @@ namespace stw
 	using http_headers = std::unordered_map<std::string, std::string>;
 	using http_cookies = std::unordered_map<std::string, std::string>;
 
+	struct http_cookie_options
+	{
+		uint32_t maxAge = 86400;
+        std::string path = "/";
+        std::string sameSite = "Lax";
+        bool httpOnly = true;
+        bool secure = false;
+	};
+
     enum http_header_error 
     {
         http_header_error_none,
@@ -140,6 +149,7 @@ namespace stw
 		http_headers headers;
 		http_cookies cookies;
 		http_request();
+		bool get_cookie(const std::string &name, std::string &value);
 		static bool parse(const std::string &requestBody, http_request &request);
 		static http_method get_http_method_from_string(const std::string &method);
 		static std::string get_string_from_http_method(http_method method);
@@ -152,6 +162,7 @@ namespace stw
 		http_cookies cookies;
 		std::shared_ptr<stw::stream> content;
 		http_response();
+		void set_cookie(const std::string &name, const std::string& value, const http_cookie_options *options = nullptr);
 	};
 
     std::string get_http_content_type(const std::string &filePath);

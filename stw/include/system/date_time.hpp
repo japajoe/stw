@@ -45,6 +45,7 @@ namespace stw
         date_time add_hours(int64_t hours);
         date_time add_days(int64_t days);
         static date_time get_now();
+		static int64_t get_epoch();
         int32_t get_second() const;
         int32_t get_year() const;
         int64_t get_time_since_epoch_in_seconds() const;

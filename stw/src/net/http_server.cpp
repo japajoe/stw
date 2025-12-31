@@ -417,7 +417,8 @@ namespace stw
 		{
 			for(const auto &[key,value] : context->response.cookies)
 			{
-				responseStream << "Set-Cookie: " << value << "\r\n";
+				// Format: Set-Cookie: NAME=VALUE; Attributes...
+				responseStream << "Set-Cookie: " << key << "=" << value << "\r\n";
 			}
 		}
 
