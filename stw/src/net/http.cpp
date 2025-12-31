@@ -118,6 +118,11 @@ namespace stw
 			{
 				std::string key = line.substr(0, delimiterPos);
 				std::string value = line.substr(delimiterPos + 2); // Skip the ": "
+
+				std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { 
+					return std::tolower(c); 
+				});
+
 				bool isCookie = false;
 
 				if(compare_case_insensitive(key, "Content-Length"))
@@ -136,26 +141,34 @@ namespace stw
 				else if(compare_case_insensitive(key, "Cookie"))
 				{
 					isCookie = true;
-
 					std::istringstream cookieStream(value);
 					std::string cookiePair;
 
-					// Split by semicolon
 					while (std::getline(cookieStream, cookiePair, ';')) 
 					{
-						// Remove leading whitespace (common in Cookie headers)
-						size_t first = cookiePair.find_first_not_of(" ");
-						if (std::string::npos != first) 
-						{
-							cookiePair = cookiePair.substr(first);
-						}
+						// Trim BOTH ends (leading/trailing whitespace/tabs)
+						size_t first = cookiePair.find_first_not_of(" \t\r\n");
+						
+						if (first == std::string::npos) 
+							continue; // Skip empty segments
+						
+						size_t last = cookiePair.find_last_not_of(" \t\r\n");
+						std::string cleanPair = cookiePair.substr(first, (last - first + 1));
 
-						// Split by '=' to get name and value
-						size_t sep = cookiePair.find('=');
+						// Split by '='
+						size_t sep = cleanPair.find('=');
+						
 						if (sep != std::string::npos) 
 						{
-							std::string cName = cookiePair.substr(0, sep);
-							std::string cValue = cookiePair.substr(sep + 1);
+							std::string cName = cleanPair.substr(0, sep);
+							std::string cValue = cleanPair.substr(sep + 1);
+							
+							// Strip quotes if the browser quoted the value (e.g. ID="abc")
+							if (cValue.size() >= 2 && cValue.front() == '"' && cValue.back() == '"') 
+							{
+								cValue = cValue.substr(1, cValue.size() - 2);
+							}
+
 							request.cookies[std::move(cName)] = std::move(cValue);
 						}
 					}
