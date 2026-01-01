@@ -17,13 +17,37 @@
 // SOFTWARE.
 
 #include "crypto.hpp"
-#include <vector>
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
+#include <sstream>
+#include <random>
 
 namespace stw::crypto
 {
+	std::string create_uuid()
+	{
+		std::random_device rd;
+		std::mt19937 gen(rd());
+		std::uniform_int_distribution<> dis(0, 255);
+
+		std::ostringstream uuidStream;
+
+		for (int i = 0; i < 16; ++i) {
+			if (i == 6) 
+				uuidStream << std::hex << ((dis(gen) % 16) | 0x40); // Set version to 0100 (Version 4)
+			else if (i == 8)
+				uuidStream << std::hex << ((dis(gen) % 4) | 0x80); // Set variant to 10xx
+			else
+				uuidStream << std::hex << dis(gen);
+
+			if (i == 3 || i == 5 || i == 7 || i == 9)
+				uuidStream << '-';
+		}
+
+		return uuidStream.str();
+	}
+
 	static inline uint32_t left_rotate(uint32_t value, size_t bits)
 	{
 		return (value << bits) | (value >> (32 - bits));
@@ -301,5 +325,44 @@ namespace stw::crypto
 			std::memcpy(output + (b - 1) * 32, T, chunk);
 		}
 		return output;
+	}
+
+	std::vector<uint8_t> create_salt(size_t length)
+	{
+		std::vector<uint8_t> salt(length);
+		std::random_device rd;
+		std::mt19937 gen(rd());
+		std::uniform_int_distribution<uint8_t> dis(0, 255);
+
+		for (size_t i = 0; i < length; ++i) 
+		{
+			salt[i] = dis(gen);
+		}
+
+		return salt;
+	}
+
+	bool password_set::create(const std::string &password, size_t saltLength, size_t hashLength, size_t iterations)
+	{
+		if(password.empty() || saltLength < 1 || hashLength < 1 || iterations < 1)
+			return false;
+		
+		passwordSalt = create_salt(saltLength);
+		passwordHash.resize(hashLength);
+		
+		stw::crypto::create_sha_256((uint8_t*)password.data(), password.size(), passwordSalt.data(), passwordSalt.size(), iterations, hashLength, passwordHash.data());
+		
+		return true;
+	}
+
+	bool password_set::match(const std::string &password)
+	{
+		if(passwordSalt.empty() || passwordHash.empty() || password.empty())
+			return false;
+		
+		std::vector<uint8_t> hash;
+		hash.resize(passwordSalt.size());		
+		create_sha_256((uint8_t*)password.data(), password.size(), passwordSalt.data(), passwordSalt.size(), 2048, hash.size(), hash.data());
+		return std::memcmp(hash.data(), passwordHash.data(), hash.size()) == 0;
 	}
 }
