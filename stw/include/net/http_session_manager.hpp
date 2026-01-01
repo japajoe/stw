@@ -44,9 +44,11 @@ namespace stw
 		void operator=(const http_session_manager&) = delete;
 		void start(http_request &request, http_response &response);
 		void destroy(http_request &request, http_response &response);
+		bool get_id(http_request &request, std::string &sessionId);
 		bool get_value(http_request &request, const std::string &key, std::string& value);
 		bool set_value(http_request &request, const std::string &key, const std::string& value);
-		bool value_exists(http_request &request, const std::string &key);
+		bool key_exists(http_request &request, const std::string &key);
+		void invalidate_sessions_with_key_and_value(const std::string &key, const std::string &value);
 		static http_session_manager *get_instance() 
 		{
 			static http_session_manager instance;

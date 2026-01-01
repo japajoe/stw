@@ -78,7 +78,11 @@ namespace stw
 			return;
 
         std::unique_lock lock(sharedMutex);
-        sessions.erase(sid);
+
+		auto sit = sessions.find(sid);
+		
+		if (sit != sessions.end())
+	        sessions.erase(sit);
 
 		// Cookie is expired, remove it from the request
 		auto it = request.cookies.find(COOKIE_NAME);
@@ -92,6 +96,22 @@ namespace stw
 		options.path = "/";    // Path must match the original cookie path exactly
         response.set_cookie(COOKIE_NAME, "", &options);
     }
+
+	bool http_session_manager::get_id(http_request &request, std::string &sessionId)
+	{
+		if(!request.get_cookie(COOKIE_NAME, sessionId))
+			return false;
+
+		std::shared_lock lock(sharedMutex);
+
+		auto it = sessions.find(sessionId);
+
+		auto now = date_time::get_now();
+		
+		if (it != sessions.end() && it->second->expires > now)
+			return true;
+		return false;
+	}
 
     bool http_session_manager::get_value(http_request& request, const std::string& key, std::string& value)
     {
@@ -139,7 +159,7 @@ namespace stw
         return false;
     }
 
-	bool http_session_manager::value_exists(http_request &request, const std::string &key)
+	bool http_session_manager::key_exists(http_request &request, const std::string &key)
 	{
         std::string sid;
 
@@ -159,6 +179,21 @@ namespace stw
         }
 
         return false;
+	}
+
+	void http_session_manager::invalidate_sessions_with_key_and_value(const std::string &key, const std::string &value)
+	{
+		std::unique_lock lock(sharedMutex);
+        
+        for (auto it = sessions.begin(); it != sessions.end(); )
+        {
+			auto sit = it->second->settings.find(key);
+			
+			if(sit != it->second->settings.end())
+				it = sessions.erase(it);
+            else
+                ++it;
+        }
 	}
 
     std::string http_session_manager::create_id()
