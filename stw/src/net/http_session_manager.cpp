@@ -56,7 +56,7 @@ namespace stw
 		std::string sid = create_id();
 		auto session = std::make_shared<http_session>();
 		session->id = sid;
-		session->expires = date_time::get_now().add_hours(MAX_AGE_SECONDS);
+		session->expires = date_time::get_now().add_seconds(MAX_AGE_SECONDS);
 
 		{
 			std::unique_lock lock(sharedMutex);
@@ -67,7 +67,6 @@ namespace stw
 		opts.maxAge = MAX_AGE_SECONDS;
 		opts.path = "/";
 		opts.httpOnly = true;
-		
 		response.set_cookie(COOKIE_NAME, sid, &opts);
     }
 
@@ -99,7 +98,9 @@ namespace stw
         std::string sid;
 
 		if(!request.get_cookie(COOKIE_NAME, sid))
+		{
 			return false;
+		}
 
         std::shared_lock lock(sharedMutex); // Shared lock for reading
         auto it = sessions.find(sid);
@@ -115,6 +116,7 @@ namespace stw
                 return true;
             }
         }
+
         return false;
     }
 
@@ -123,7 +125,11 @@ namespace stw
         std::string sid;
 
 		if(!request.get_cookie(COOKIE_NAME, sid))
+		{
 			return false;
+		}
+
+		std::cout << "SID " << sid << '\n';
 
         std::unique_lock lock(sharedMutex); // Unique lock for writing
         auto it = sessions.find(sid);
@@ -135,6 +141,7 @@ namespace stw
             it->second->settings[key] = value;
             return true;
         }
+
         return false;
     }
 
