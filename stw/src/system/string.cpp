@@ -69,7 +69,7 @@ namespace stw::string
 		{"larr", "←"}, {"lceil", "⌈"}, {"ldquo", "“"}, {"le", "≤"}, 
 		{"lfloor", "⌊"}, {"lowast", "∗"}, {"loz", "◊"}, {"lsaquo", "‹"}, 
 		{"lsquo", "‘"}, {"lt", "<"}, {"mdash", "—"}, {"middot", "·"}, 
-		{"minus", "−"}, {"mu", "μ"}, {"nabla", "∇"}, {"nbsp", ""}, 
+		{"minus", "−"}, {"mu", "μ"}, {"nabla", "∇"}, {"nbsp", "\xc2\xa0"}, 
 		{"ndash", "–"}, {"ne", "≠"}, {"ni", "∋"}, {"notin", "∉"}, 
 		{"nsub", "⊄"}, {"ntilde", "ñ"}, {"nu", "ν"}, {"ocirc", "ô"}, 
 		{"ograve", "ò"}, {"omega", "ω"}, {"omicron", "ο"}, {"oplus", "⊕"}, 
@@ -191,11 +191,8 @@ namespace stw::string
 		return ret;
 	}
 
-	std::string html_decode(const std::string &s) 
+	std::string html_decode(std::string_view str) 
 	{
-
-		std::string_view str = s;
-
 		std::string result;
 		result.reserve(str.size());
 
@@ -208,19 +205,20 @@ namespace stw::string
 					// 1. Handle Numeric Entities
 					if (entity[0] == '#') {
 						uint32_t code = 0;
-						bool success = false;
+						std::errc ec{};
+						
 						if (entity.size() > 2 && (entity[1] == 'x' || entity[1] == 'X')) {
 							auto sub = entity.substr(2);
-							auto [ptr, ec] = std::from_chars(sub.data(), sub.data() + sub.size(), code, 16);
-							success = (ec == std::errc{});
+							auto [ptr, error] = std::from_chars(sub.data(), sub.data() + sub.size(), code, 16);
+							ec = error;
 						} else {
 							auto sub = entity.substr(1);
-							auto [ptr, ec] = std::from_chars(sub.data(), sub.data() + sub.size(), code);
-							success = (ec == std::errc{});
+							auto [ptr, error] = std::from_chars(sub.data(), sub.data() + sub.size(), code);
+							ec = error;
 						}
 
-						if (success) {
-							// UTF-8 multi-byte encoding
+						if (ec == std::errc{}) {
+							// UTF-8 encoding logic
 							if (code <= 0x7F) {
 								result += static_cast<char>(code);
 							} else if (code <= 0x7FF) {
@@ -236,15 +234,22 @@ namespace stw::string
 								result += static_cast<char>(0x80 | ((code >> 6) & 0x3F));
 								result += static_cast<char>(0x80 | (code & 0x3F));
 							}
-							i = end; continue;
+							i = end; 
+							continue;
 						}
 					} 
-					// 2. Handle Named Entities via Binary Search
+					// 2. Handle Named Entities
 					else {
-						auto it = std::lower_bound(kEntityTable.begin(), kEntityTable.end(), entity);
+						// Custom comparator for std::lower_bound
+						auto it = std::lower_bound(kEntityTable.begin(), kEntityTable.end(), entity,
+							[](const html_entity_entry& entry, std::string_view val) {
+								return entry.name < val;
+							});
+
 						if (it != kEntityTable.end() && it->name == entity) {
 							result += it->value;
-							i = end; continue;
+							i = end; 
+							continue;
 						}
 					}
 				}
