@@ -98,9 +98,7 @@ namespace stw
         std::string sid;
 
 		if(!request.get_cookie(COOKIE_NAME, sid))
-		{
 			return false;
-		}
 
         std::shared_lock lock(sharedMutex); // Shared lock for reading
         auto it = sessions.find(sid);
@@ -125,11 +123,7 @@ namespace stw
         std::string sid;
 
 		if(!request.get_cookie(COOKIE_NAME, sid))
-		{
 			return false;
-		}
-
-		std::cout << "SID " << sid << '\n';
 
         std::unique_lock lock(sharedMutex); // Unique lock for writing
         auto it = sessions.find(sid);
@@ -144,6 +138,28 @@ namespace stw
 
         return false;
     }
+
+	bool http_session_manager::value_exists(http_request &request, const std::string &key)
+	{
+        std::string sid;
+
+		if(!request.get_cookie(COOKIE_NAME, sid))
+			return false;
+
+        std::shared_lock lock(sharedMutex); // Shared lock for reading
+        auto it = sessions.find(sid);
+
+		const auto now = date_time::get_now();
+        
+        if (it != sessions.end() && it->second->expires > now)
+        {
+            auto data_it = it->second->settings.find(key);
+            if (data_it != it->second->settings.end())
+                return true;
+        }
+
+        return false;
+	}
 
     std::string http_session_manager::create_id()
     {

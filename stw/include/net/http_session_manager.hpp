@@ -46,6 +46,7 @@ namespace stw
 		void destroy(http_request &request, http_response &response);
 		bool get_value(http_request &request, const std::string &key, std::string& value);
 		bool set_value(http_request &request, const std::string &key, const std::string& value);
+		bool value_exists(http_request &request, const std::string &key);
 		static http_session_manager *get_instance() 
 		{
 			static http_session_manager instance;
