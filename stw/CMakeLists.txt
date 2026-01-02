@@ -19,11 +19,11 @@ endif()
 file(GLOB_RECURSE SOURCES src/*.cpp src/*.c)
 
 include_directories(
-    "${PROJECT_SOURCE_DIR}/include/"
-	"${PROJECT_SOURCE_DIR}/include/core"
-	"${PROJECT_SOURCE_DIR}/include/net"
-	"${PROJECT_SOURCE_DIR}/include/system"
-	"${PROJECT_SOURCE_DIR}/include/templating"
+    "${PROJECT_SOURCE_DIR}/include/stw/"
+	"${PROJECT_SOURCE_DIR}/include/stw/core"
+	"${PROJECT_SOURCE_DIR}/include/stw/net"
+	"${PROJECT_SOURCE_DIR}/include/stw/system"
+	"${PROJECT_SOURCE_DIR}/include/stw/templating"
 )
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})

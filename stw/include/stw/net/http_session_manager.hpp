@@ -49,7 +49,7 @@ namespace stw
 		bool set_value(http_request &request, const std::string &key, const std::string& value);
 		bool key_exists(http_request &request, const std::string &key);
 		void invalidate_sessions_with_key_and_value(const std::string &key, const std::string &value);
-		static http_session_manager *get_instance() 
+		static http_session_manager *get_instance()
 		{
 			static http_session_manager instance;
 			return &instance;
