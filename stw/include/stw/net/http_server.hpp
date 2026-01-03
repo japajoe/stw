@@ -72,11 +72,13 @@ namespace stw
     };
 
     using request_handler = std::function<http_response(http_request &request, http_stream *stream)>;
+	using close_handler = std::function<void()>;
 
     class http_server
     {
     public:
         request_handler onRequest;
+		close_handler onClose;
         http_server();
         int run(const stw::http_config &config);
     private:

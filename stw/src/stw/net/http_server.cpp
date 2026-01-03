@@ -112,6 +112,9 @@ namespace stw
 			}
         }
 
+		if(onClose)
+			onClose();
+
         for (auto &worker : workers)
         {
             worker->stopFlag = true;

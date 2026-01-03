@@ -39,7 +39,6 @@ namespace stw
 	class http_session_manager
 	{
 	public:
-		http_session_manager() : requestCounter(0) {}
 		http_session_manager(const http_session_manager&) = delete;
 		void operator=(const http_session_manager&) = delete;
 		http_session_manager(http_session_manager&&) = delete;
@@ -57,9 +56,10 @@ namespace stw
 			return &instance;
 		}
 	private:
+		http_session_manager() = default;
 		std::unordered_map<std::string,std::shared_ptr<http_session>> sessions;
 		std::shared_mutex sharedMutex;
-		std::atomic<uint32_t> requestCounter;
+		std::atomic<uint32_t> requestCounter{0};
 		std::string create_id();
 		void cleanup();		
 	};
