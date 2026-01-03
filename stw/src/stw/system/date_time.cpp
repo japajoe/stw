@@ -119,6 +119,12 @@ namespace stw
 		return 0;
 	}
 
+	date_time date_time::get_from_milliseconds(int64_t ms)
+	{
+    	std::chrono::milliseconds dur(ms);
+		return date_time(std::chrono::system_clock::time_point(dur));
+	}
+
 	int32_t date_time::get_second() const
 	{
         time_t tt = std::chrono::system_clock::to_time_t(timestamp);

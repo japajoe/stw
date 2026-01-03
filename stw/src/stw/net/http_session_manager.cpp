@@ -218,7 +218,7 @@ namespace stw
 		std::unique_lock lock(sharedMutex);
         const auto now = date_time::get_now();
         
-        for (auto it = sessions.begin(); it != sessions.end(); )
+        for (auto it = sessions.begin(); it != sessions.end();)
         {
             if (it->second->expires < now)
                 it = sessions.erase(it);
@@ -226,4 +226,121 @@ namespace stw
                 ++it;
         }
     }
+
+	bool http_session_manager::save_state(const std::string &filePath)
+	{
+		std::unique_lock lock(sharedMutex);
+
+		try
+		{
+			stw::file_stream file(filePath, stw::file_access_write);
+			const auto now = date_time::get_now();
+			uint32_t numberOfSessions = 0;
+
+			file.write(&numberOfSessions, sizeof(uint32_t));
+
+			for (auto it = sessions.begin(); it != sessions.end(); ++it)
+			{
+				if(it->second->expires < now)
+					continue;
+				
+				numberOfSessions++;
+				
+				uint32_t idLength = it->second->id.size();
+				file.write(&idLength, sizeof(uint32_t));
+				file.write(it->second->id.data(), idLength);
+				
+				int64_t expires = it->second->expires.get_time_since_epoch_in_milliseconds();
+				file.write(&expires, sizeof(int64_t));
+				
+				uint32_t numberOfSettings = it->second->settings.size();
+				file.write(&numberOfSettings, sizeof(uint32_t));
+
+				for (auto sit = it->second->settings.begin(); sit != it->second->settings.end(); ++sit)
+				{
+					uint32_t keyLength = sit->first.size();
+					file.write(&keyLength, sizeof(uint32_t));
+					file.write(sit->first.data(), keyLength);
+
+					uint32_t valueLength = sit->second.size();
+					file.write(&valueLength, sizeof(uint32_t));
+					file.write(sit->second.data(), valueLength);
+				}
+			}
+
+			file.seek(0, stw::seek_origin_begin);
+			file.write(&numberOfSessions, sizeof(uint32_t));
+
+			return true;
+		}
+		catch(const std::exception &ex)
+		{
+			std::cout << "Failed to save sessions: " << ex.what() << '\n';
+			return false;
+		}
+	}
+
+	bool http_session_manager::load_state(const std::string &filePath)
+	{
+		std::unique_lock lock(sharedMutex);
+
+		if(sessions.size() > 0)
+		{
+			for (auto it = sessions.begin(); it != sessions.end();)
+			{
+				it = sessions.erase(it);
+			}
+		}
+
+		try
+		{
+			stw::file_stream file(filePath, stw::file_access_read);
+			uint32_t numberOfSessions = 0;
+
+			file.read(&numberOfSessions, sizeof(uint32_t));
+
+			for (uint32_t i = 0; i < numberOfSessions; i++)
+			{
+				auto session = std::make_shared<http_session>();
+
+				uint32_t idLength = 0;
+				file.read(&idLength, sizeof(uint32_t));
+				session->id.resize(idLength);
+				file.read(session->id.data(), idLength);
+				
+				int64_t expires = 0;
+				file.read(&expires, sizeof(int64_t));
+				session->expires = date_time::get_from_milliseconds(expires);
+				
+				uint32_t numberOfSettings = 0;
+				file.read(&numberOfSettings, sizeof(uint32_t));
+
+				for (uint32_t j = 0; j < numberOfSettings; j++)
+				{
+					uint32_t keyLength = 0;
+					file.read(&keyLength, sizeof(uint32_t));
+					std::string key;
+					key.resize(keyLength);
+					file.read(key.data(), keyLength);
+
+					uint32_t valueLength = 0;
+					file.read(&valueLength, sizeof(uint32_t));
+					std::string value;
+					value.resize(valueLength);
+					file.read(value.data(), valueLength);
+
+					session->settings[key] = value;
+				}
+
+				sessions[session->id] = session;
+			}
+
+			return true;
+		}
+		catch(const std::exception &ex)
+		{
+			std::cout << "Failed to loaded sessions: " << ex.what() << '\n';
+			return false;
+		}
+	}
 }
