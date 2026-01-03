@@ -332,6 +332,12 @@ namespace stw
 					session->settings[key] = value;
 				}
 
+				auto now = date_time::get_now();
+
+				// Skip if session is expired
+				if(session->expires < now)
+					continue;
+
 				sessions[session->id] = session;
 			}
 
