@@ -42,6 +42,8 @@ namespace stw
 		http_session_manager() : requestCounter(0) {}
 		http_session_manager(const http_session_manager&) = delete;
 		void operator=(const http_session_manager&) = delete;
+		http_session_manager(http_session_manager&&) = delete;
+		void operator=(http_session_manager&&) = delete;
 		void start(http_request &request, http_response &response);
 		void destroy(http_request &request, http_response &response);
 		bool get_id(http_request &request, std::string &sessionId);
