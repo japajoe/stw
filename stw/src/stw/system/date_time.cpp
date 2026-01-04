@@ -27,6 +27,12 @@ namespace stw
 		timestamp = std::chrono::system_clock::now();
 	}
 
+	date_time::date_time(int64_t durationMilliseconds)
+	{
+    	std::chrono::milliseconds dur(durationMilliseconds);
+		timestamp = std::chrono::system_clock::time_point(dur);
+	}
+
 	date_time::date_time(const time_stamp& timestamp)
 	{
 		this->timestamp = timestamp;
@@ -117,12 +123,6 @@ namespace stw
 	int64_t date_time::get_epoch()
 	{
 		return 0;
-	}
-
-	date_time date_time::get_from_milliseconds(int64_t ms)
-	{
-    	std::chrono::milliseconds dur(ms);
-		return date_time(std::chrono::system_clock::time_point(dur));
 	}
 
 	int32_t date_time::get_second() const

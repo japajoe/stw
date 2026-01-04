@@ -26,16 +26,12 @@ namespace stw
 {
     struct http_config
 	{
-        uint16_t portHttp;
-        uint16_t portHttps;
+        uint16_t port;
         uint32_t maxHeaderSize;
         std::string bindAddress;
-        std::string certificatePath;
-        std::string privateKeyPath;
 		std::string publicHtmlPath;
 		std::string privateHtmlPath;
         std::string hostName;
-        bool useHttpsForwarding;
         void load_default();
 		bool load_from_file(const std::string &filePath);
     };

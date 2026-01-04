@@ -31,6 +31,7 @@ namespace stw
     {
     public:
         date_time();
+		date_time(int64_t durationMilliseconds);
         date_time(const time_stamp& timestamp);
         time_stamp get_date() const;
         int32_t get_day() const;
@@ -46,7 +47,6 @@ namespace stw
         date_time add_days(int64_t days);
         static date_time get_now();
 		static int64_t get_epoch();
-		static date_time get_from_milliseconds(int64_t ms);
         int32_t get_second() const;
         int32_t get_year() const;
         int64_t get_time_since_epoch_in_seconds() const;

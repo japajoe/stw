@@ -62,7 +62,7 @@ namespace stw
 		if(!onRequest)
 			throw std::runtime_error("onRequest callback is not set"); 
 
-        if (!listener.bind(config.bindAddress, config.portHttp))
+        if (!listener.bind(config.bindAddress, config.port))
             return 2;
 
         if (!listener.listen(4096))
@@ -83,7 +83,7 @@ namespace stw
             workers.back()->thread = std::thread(&http_server::worker_update, this, workers.back().get());
         }
 
-        std::cout << "Server started listening on http://" << config.bindAddress << ":" << config.portHttp << '\n';
+        std::cout << "Server started listening on http://" << config.bindAddress << ":" << config.port << '\n';
 
         size_t nextWorker = 0;
 

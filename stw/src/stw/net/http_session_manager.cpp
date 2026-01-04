@@ -310,7 +310,7 @@ namespace stw
 				
 				int64_t expires = 0;
 				file.read(&expires, sizeof(int64_t));
-				session->expires = date_time::get_from_milliseconds(expires);
+				session->expires = date_time(expires);
 				
 				uint32_t numberOfSettings = 0;
 				file.read(&numberOfSettings, sizeof(uint32_t));
@@ -332,7 +332,7 @@ namespace stw
 					session->settings[key] = value;
 				}
 
-				auto now = date_time::get_now();
+				const auto now = date_time::get_now();
 
 				// Skip if session is expired
 				if(session->expires < now)
