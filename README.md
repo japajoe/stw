@@ -90,7 +90,7 @@ Sure, the code highlighting isn't super great, and your code editor won't offer 
             </tr>
         </thead>
         <tbody>
-            <?cpp for(const auto& [key, value] : get_headers()) { ?>
+            <?cpp for(const auto& [key, value] : get_request_headers()) { ?>
                 <tr>
                     <td><?cpp echo(key); ?></td>
                     <td><?cpp echo(value); ?></td>
