@@ -108,7 +108,7 @@ Sure, the code highlighting isn't super great, and your code editor won't offer 
 
 To generate a header file from this template (or even multiple in a directory), you can do something like this:
 ```cpp
-#include "stw/templating/templ.hpp"
+#include <stw/templating/templ.hpp>
 
 int main()
 {
@@ -134,7 +134,7 @@ int main()
 If successful, the generated files will be in the output directory. The class names will have the form `name_view.hpp`. You can now use these files in your project like so:
 
 ```cpp
-#include <stw/stw.hpp"
+#include <stw/stw.hpp>
 #include "index_view.html" //Assuming you have a class called index_view
 
 class index_controller : public stw::http_controller
