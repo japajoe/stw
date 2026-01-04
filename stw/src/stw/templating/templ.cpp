@@ -51,14 +51,17 @@ class ${CLASS_NAME}
 	void *m_userData_;
 	std::stringstream m_ss_;
 	std::string m_content_;
+	stw::http_request *m_request_;
   public:
 	${CLASS_NAME}()
 	{
 		m_userData_ = nullptr;
+		m_request_ = nullptr;
 	}
 	void get(stw::http_request &request, stw::http_response &response, void *userData = nullptr)
 	{
 		m_userData_ = userData;
+		m_request_ = &request;
 		
 		${GENERATED_CODE}
 
@@ -73,6 +76,14 @@ class ${CLASS_NAME}
 	void *get_user_data()
 	{
 		return this->m_userData_;
+	}
+	stw::http_headers &get_request_headers() const
+	{
+		return m_request_->headers;
+	}
+	stw::http_cookies &get_request_cookies() const
+	{
+		return m_request_->cookies;
 	}
 };
 
