@@ -19,7 +19,7 @@ A library for making web based applications.
 - Work in progress, but the `stw::socket` class does work on Mac as it is.
 
 # Notes on requirements
-I've removed the old http server implementation, the new one does not use any TLS. As a result, you only need to have the  libraries if you want to use the `stw::web_socket` and `stw::http_client`. No linking is required with any libraries, but on Linux you must have these libraries somewhere in your system path. On Windows you must place the dll files in the same directory as the executable. MacOS is not fully supported (yet).
+You only need to have the libraries if you want to use the `stw::web_socket` and `stw::http_client`. No linking is required with any libraries, but on Linux you must have these libraries somewhere in your system path. On Windows you must place the dll files in the same directory as the executable. MacOS is not fully supported yet.
 
 # Getting started
 Before using the library make sure to call stw::load_library.
