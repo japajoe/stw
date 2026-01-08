@@ -208,4 +208,4 @@ int main()
 ```
 
 # Disclaimer
-This library is just for educational purposes. It is a means for me to have fun while exploring new concepts and improve my understanding of networking and cross-platform development. I might add or remove anything I want at any given time if it suits me. Use at your own discretion.
+This library is just for educational purposes, use at your own discretion.
