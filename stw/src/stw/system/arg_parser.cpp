@@ -1,6 +1,7 @@
 #include "arg_parser.hpp"
 #include <iostream>
 #include <cassert>
+#include <algorithm>
 
 namespace stw
 {
